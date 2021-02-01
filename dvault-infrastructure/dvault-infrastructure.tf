@@ -96,6 +96,13 @@ resource "aws_cloudwatch_event_bus" "shape-dvault-eventbus" {
   name = "shape-dvault-eventbus-staging"
 }
 
+resource "aws_cloudwatch_event_permission" "shape-dvault-eventbus-permission" {
+  principal = var.source-account-id
+  statement_id = "ShapeAccess"
+
+  event_bus_name = aws_cloudwatch_event_bus.shape-dvault-eventbus.name  
+}
+
 resource "aws_cloudwatch_event_rule" "shape-dvault-send-rule" {
   name        = "shape-dvault-send-rule"
   description = "Shape rule for receiving dvault events"

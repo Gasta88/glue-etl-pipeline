@@ -6,6 +6,6 @@ variable "profile" {
   default = "default"
 }
 
-variable "account-id" {
+variable "source-account-id" {
   default = "228718274899"
 }
