@@ -8,7 +8,7 @@ In order to receive events an AWS Cloudwatch Event Bus is set up (with cross acc
 
 ![shape dvault architecture](shape-dvault-architecture.png "Shape DVault Architecture")
 
-## Terraform deployment
+## Terraform deployment
 
 The infrastructure is defined in Terraform under the `dvault-infrastructure` folder that container the following files: 
 1. `dvault-infrastructure.tf` Main Terraform file containing the AWS infrastructure
