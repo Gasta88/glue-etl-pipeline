@@ -19,7 +19,7 @@ The infrastructure is defined in Terraform under the `dvault-infrastructure` fol
 
 AWS CLI is configured in your terminal with proper credentials to access target account
 
-### Deployment
+### Deployment
 
 1. Compile `terraform.tfvars` file according to your needs (if it's a new deployment please remember to change state file key)
 2. `cd dvault-infrastructure`
@@ -28,7 +28,7 @@ AWS CLI is configured in your terminal with proper credentials to access target 
 
 As result the designed infrastructure should be deployed
 
-## Test 
+## Test 
 
 A `test-event.json` file is provided for testing the file delivery. 
 Please compile `EventBusName` field type in the JSON file with the target event bus ARN. 
