@@ -5,8 +5,8 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = "terraform-ai-dev-states"
-    key    = "ai-terraform-state-files/dvault-shape-staging.tfstate"
+    bucket = var.tf-state-bucket-name
+    key    = var.tf-state-filekey
     region = "us-east-1"
   }
 }
