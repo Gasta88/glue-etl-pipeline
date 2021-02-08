@@ -5,8 +5,8 @@ provider "aws" {
 
 terraform {
   backend "s3" {
-    bucket = var.tf-state-bucket-name
-    key    = var.tf-state-filekey
+    bucket = "terraform-ai-dev-states"
+    key    = "ai-terraform-state-files/dvault-shape-staging.tfstate"
     region = "us-east-1"
   }
 }
@@ -97,8 +97,10 @@ resource "aws_cloudwatch_event_bus" "shape-dvault-eventbus" {
 }
 
 resource "aws_cloudwatch_event_permission" "shape-dvault-eventbus-permission" {
-  principal = var.source-account-id
-  statement_id = "ShapeAccess"
+  for_each = var.cloudwatch-eventpermission-map
+  principal = each.value.principal
+  #principal = var.source-account-id
+  statement_id = "DVaultAccess-${each.key}"
 
   event_bus_name = aws_cloudwatch_event_bus.shape-dvault-eventbus.name  
 }

@@ -9,11 +9,13 @@ variable "profile" {
 variable "source-account-id" {
   default = "228718274899"
 }
-
-variable "tf-state-filekey" {
-  default = "ai-terraform-state-files/dvault-shape-staging.tfstate"
-}
-
-variable "tf-state-bucket-name" {
-  default = "terraform-ai-dev-states"
+variable "cloudwatch-eventpermission-map" {
+  default = {
+    account1 = {
+      principal = "228718274899"
+    },
+    account2 = {
+      principal = "541436412055" #vcoach accocunt id for testing
+    }
+  }
 }
