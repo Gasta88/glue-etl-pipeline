@@ -15,6 +15,9 @@ terraform {
 resource "aws_s3_bucket" "dvault-shape-staging-bucket" {
   bucket = "dvault-shape-staging"
   acl    = "private"
+  versioning {
+    enabled = true
+  }
 }
 
 #Create Kinesis Firehose delivery stream with s3 destination
