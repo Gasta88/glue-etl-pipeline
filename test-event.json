@@ -1,8 +1,8 @@
 [
     {   
         "Source": "com.mycompany.myapp",
-        "Detail": "{ \"key1\": \"value1\", \"key2\": \"value2\" }",
+        "Detail": "{ \"key1\": \"value1\", \"key2\": \"hello from vcoach\" }",
         "EventBusName": "arn:aws:events:us-east-1:228718274899:event-bus/shape-dvault-eventbus-staging",
-        "DetailType": "shape.dvault@TestApp"
+        "DetailType": "shape.dvault"
     }
 ]
