@@ -22,6 +22,16 @@ terraform {
 resource "aws_s3_bucket" "dvault-staging-bucket" {
   bucket = "dvault-staging"
   acl    = "private"
+  server_side_encryption_configuration {
+    rule {
+      apply_server_side_encryption_by_default {
+        sse_algorithm = "AES256"
+      }
+    }
+  }
+  versioning {
+    enabled = true
+  }
 }
 
 #Create Kinesis Firehose delivery stream with s3 destination
