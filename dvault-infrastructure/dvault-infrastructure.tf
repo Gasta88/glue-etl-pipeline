@@ -1,9 +1,16 @@
 provider "aws" {
-    region  = var.region
-    profile = var.profile
+  region  = var.region
+  profile = var.profile
 }
 
 terraform {
+  required_version = ">= 0.13"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.0"
+    }
+  }
   backend "s3" {
     bucket = "terraform-ai-dev-states"
     key    = "ai-terraform-state-files/dvault-shape-staging.tfstate"
@@ -12,14 +19,14 @@ terraform {
 }
 
 #Create S3 bucket for dvault files
-resource "aws_s3_bucket" "dvault-shape-staging-bucket" {
-  bucket = "dvault-shape-staging"
+resource "aws_s3_bucket" "dvault-staging-bucket" {
+  bucket = "dvault-staging"
   acl    = "private"
 }
 
 #Create Kinesis Firehose delivery stream with s3 destination
 resource "aws_iam_role" "firehose_role" {
-  name = "firehose_dvault_shape_role"
+  name = "firehose_dvault_role"
 
   assume_role_policy = <<EOF
 {
@@ -38,19 +45,19 @@ resource "aws_iam_role" "firehose_role" {
 EOF
 }
 
-resource "aws_kinesis_firehose_delivery_stream" "dvault-shape-staging-stream" {
-  name        = "dvault-shape-staging-stream"
+resource "aws_kinesis_firehose_delivery_stream" "dvault-staging-stream" {
+  name        = "dvault-staging-stream"
   destination = "s3"
 
   s3_configuration {
     role_arn   = aws_iam_role.firehose_role.arn
-    bucket_arn = aws_s3_bucket.dvault-shape-staging-bucket.arn
+    bucket_arn = aws_s3_bucket.dvault-staging-bucket.arn
   }
 }
 
 resource "aws_iam_policy" "firehose-role-policy" {
-  name        = "firehose-dvault-shape-role-policy"
-  description = "firehose-dvault-shape-role-policy"
+  name        = "firehose-dvault-role-policy"
+  description = "firehose-dvault-role-policy"
 
   policy = <<EOF
 {
@@ -67,8 +74,8 @@ resource "aws_iam_policy" "firehose-role-policy" {
                 "s3:PutObject"
             ],      
             "Resource": [        
-                "${aws_s3_bucket.dvault-shape-staging-bucket.arn}",
-                "${aws_s3_bucket.dvault-shape-staging-bucket.arn}/*"		    
+                "${aws_s3_bucket.dvault-staging-bucket.arn}",
+                "${aws_s3_bucket.dvault-staging-bucket.arn}/*"		    
             ]    
         }, 
         {
@@ -79,7 +86,7 @@ resource "aws_iam_policy" "firehose-role-policy" {
                 "kinesis:GetRecords",
                 "kinesis:ListShards"
             ],
-            "Resource": "${aws_kinesis_firehose_delivery_stream.dvault-shape-staging-stream.arn}"
+            "Resource": "${aws_kinesis_firehose_delivery_stream.dvault-staging-stream.arn}"
         }
     ]
 }
@@ -92,24 +99,24 @@ resource "aws_iam_role_policy_attachment" "attach-dvault-firehose-policy" {
 }
 
 #Event bus configuration
-resource "aws_cloudwatch_event_bus" "shape-dvault-eventbus" {
-  name = "shape-dvault-eventbus-staging"
+resource "aws_cloudwatch_event_bus" "ai-dvault-eventbus" {
+  name = "ai-dvault-eventbus-staging"
 }
 
-resource "aws_cloudwatch_event_permission" "shape-dvault-eventbus-permission" {
-  for_each = var.cloudwatch-eventpermission-map
+resource "aws_cloudwatch_event_permission" "ai-dvault-eventbus-permission" {
+  for_each  = var.cloudwatch-eventpermission-map
   principal = each.value.principal
   #principal = var.source-account-id
   statement_id = "DVaultAccess-${each.key}"
 
-  event_bus_name = aws_cloudwatch_event_bus.shape-dvault-eventbus.name  
+  event_bus_name = aws_cloudwatch_event_bus.ai-dvault-eventbus.name
 }
 
-resource "aws_cloudwatch_event_rule" "shape-dvault-send-rule" {
-  name        = "shape-dvault-send-rule"
-  description = "Shape rule for receiving dvault events"
+resource "aws_cloudwatch_event_rule" "ai-dvault-send-rule" {
+  name        = "ai-dvault-send-rule"
+  description = "AI rule for receiving dvault events"
 
-  event_bus_name = aws_cloudwatch_event_bus.shape-dvault-eventbus.name
+  event_bus_name = aws_cloudwatch_event_bus.ai-dvault-eventbus.name
 
   event_pattern = <<EOF
   {
@@ -122,8 +129,8 @@ resource "aws_cloudwatch_event_rule" "shape-dvault-send-rule" {
 }
 
 #Iam role for event target
-resource "aws_iam_role" "shape-dvault-event-target-rule-role" {
-  name = "shape-dvault-event-target-rule-role"
+resource "aws_iam_role" "ai-dvault-event-target-rule-role" {
+  name = "ai-dvault-event-target-rule-role"
 
   assume_role_policy = <<EOF
 {
@@ -142,9 +149,9 @@ resource "aws_iam_role" "shape-dvault-event-target-rule-role" {
 EOF
 }
 
-resource "aws_iam_policy" "shape-dvault-event-target-rule-policy" {
-  name        = "shape-dvault-event-target-rule-policy"
-  description = "shape-dvault-event-target-rule-role"
+resource "aws_iam_policy" "ai-dvault-event-target-rule-policy" {
+  name        = "ai-dvault-event-target-rule-policy"
+  description = "ai-dvault-event-target-rule-role"
 
   policy = <<EOF
 {
@@ -157,7 +164,7 @@ resource "aws_iam_policy" "shape-dvault-event-target-rule-policy" {
                 "firehose:PutRecordBatch"
             ],
             "Resource": [
-                "${aws_kinesis_firehose_delivery_stream.dvault-shape-staging-stream.arn}"
+                "${aws_kinesis_firehose_delivery_stream.dvault-staging-stream.arn}"
             ]
         }
     ]
@@ -167,15 +174,15 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "attach-dvault-event-target-role-policy" {
-  role       = aws_iam_role.shape-dvault-event-target-rule-role.name
-  policy_arn = aws_iam_policy.shape-dvault-event-target-rule-policy.arn
+  role       = aws_iam_role.ai-dvault-event-target-rule-role.name
+  policy_arn = aws_iam_policy.ai-dvault-event-target-rule-policy.arn
 }
 
-resource "aws_cloudwatch_event_target" "shape-dvault-event-target" {
-    arn = aws_kinesis_firehose_delivery_stream.dvault-shape-staging-stream.arn #Target resource arn
-    rule = aws_cloudwatch_event_rule.shape-dvault-send-rule.name
+resource "aws_cloudwatch_event_target" "dvault-event-target" {
+  arn  = aws_kinesis_firehose_delivery_stream.dvault-staging-stream.arn #Target resource arn
+  rule = aws_cloudwatch_event_rule.ai-dvault-send-rule.name
 
-    event_bus_name = aws_cloudwatch_event_bus.shape-dvault-eventbus.name
-    
-    role_arn = aws_iam_role.shape-dvault-event-target-rule-role.arn
+  event_bus_name = aws_cloudwatch_event_bus.ai-dvault-eventbus.name
+
+  role_arn = aws_iam_role.ai-dvault-event-target-rule-role.arn
 }
