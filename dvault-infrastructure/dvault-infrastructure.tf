@@ -132,7 +132,9 @@ resource "aws_cloudwatch_event_rule" "ai-dvault-send-rule" {
   {
   
   "detail-type": [
-    "shape.dvault"
+    "lms.dvault",
+    "DVaultPredictionEvent",
+    "DVaultEvaluationEvent"
   ]
   }
   EOF

@@ -12,10 +12,14 @@ variable "source-account-id" {
 variable "cloudwatch-eventpermission-map" {
   default = {
     account_shape_dev = {
-      principal = "228718274899"
+      principal = "767115741234"
     },
     account_vcoach_dev = {
       principal = "541436412055" #vcoach accocunt id for testing
+    }, 
+
+    account_informal_dev = {
+      principal = "376759361202"
     }
   }
 }
