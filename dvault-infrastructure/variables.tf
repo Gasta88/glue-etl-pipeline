@@ -19,7 +19,7 @@ variable "cloudwatch-eventpermission-map" {
     }, 
 
     account_informal_dev = {
-      principal = "376759361202"
+      principal = "426132435523"
     }
   }
 }
