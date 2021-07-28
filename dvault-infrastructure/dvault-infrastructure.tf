@@ -185,12 +185,13 @@ resource "aws_iam_role_policy_attachment" "attach-lambda-firehose-policy" {
 }
 
 resource "aws_lambda_function" "lambda_processor" {
-  filename      = "firehose_datatransform_lambda.zip"
-  function_name = "firehose_datatransform_lambda"
-  role          = aws_iam_role.lambda_iam.arn
-  handler       = "lambda_function.lambda_handler"
-  runtime       = "python3.8"
-  timeout       = 300
+  filename          = "firehose_datatransform_lambda.zip"
+  function_name     = "firehose_datatransform_lambda"
+  role              = aws_iam_role.lambda_iam.arn
+  handler           = "lambda_function.lambda_handler"
+  runtime           = "python3.8"
+  timeout           = 300
+  source_code_hash  = filebase64sha256("firehose_datatransform_lambda.zip")
 }
 
 #Event bus configuration
