@@ -57,11 +57,24 @@ EOF
 
 resource "aws_kinesis_firehose_delivery_stream" "dvault-staging-stream" {
   name        = "dvault-staging-stream"
-  destination = "s3"
+  destination = "extended_s3"
 
-  s3_configuration {
+  extended_s3_configuration {
     role_arn   = aws_iam_role.firehose_role.arn
     bucket_arn = aws_s3_bucket.dvault-staging-bucket.arn
+
+    processing_configuration {
+      enabled = "true"
+
+      processors {
+        type = "Lambda"
+
+        parameters {
+          parameter_name  = "LambdaArn"
+          parameter_value = "${aws_lambda_function.lambda_processor.arn}:$LATEST"
+        }
+      }
+    }
   }
 }
 
@@ -97,7 +110,15 @@ resource "aws_iam_policy" "firehose-role-policy" {
                 "kinesis:ListShards"
             ],
             "Resource": "${aws_kinesis_firehose_delivery_stream.dvault-staging-stream.arn}"
-        }
+        },
+        {
+            "Effect"   : "Allow",        
+            "Action":  [
+                "lambda:InvokeFunction",
+                "lambda:GetFunctionConfiguration"
+            ],
+            "Resource" : "${aws_lambda_function.lambda_processor.arn}:$LATEST"
+        }        
     ]
 }
 EOF
@@ -106,6 +127,71 @@ EOF
 resource "aws_iam_role_policy_attachment" "attach-dvault-firehose-policy" {
   role       = aws_iam_role.firehose_role.name
   policy_arn = aws_iam_policy.firehose-role-policy.arn
+}
+
+#Firehose Lambda
+
+resource "aws_iam_role" "lambda_iam" {
+  name = "firehose_datatransform_lambda-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": "sts:AssumeRole",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Effect": "Allow",
+      "Sid": ""
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_policy" "firehose-lambda-policy" {
+  name        = "AWSLambdaFirehoseExecutionRole"
+  description = ""
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "logs:CreateLogGroup",
+            "Resource": "arn:aws:logs:us-east-1:228718274899:*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+            ],
+            "Resource": [
+                "arn:aws:logs:us-east-1:228718274899:log-group:/aws/lambda/firehose_datatransform_lambda:*"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "attach-lambda-firehose-policy" {
+  role       = aws_iam_role.lambda_iam.name
+  policy_arn = aws_iam_policy.firehose-lambda-policy.arn
+}
+
+resource "aws_lambda_function" "lambda_processor" {
+  filename          = "firehose_datatransform_lambda.zip"
+  function_name     = "firehose_datatransform_lambda"
+  role              = aws_iam_role.lambda_iam.arn
+  handler           = "lambda_function.lambda_handler"
+  runtime           = "python3.8"
+  timeout           = 300
+  source_code_hash  = filebase64sha256("firehose_datatransform_lambda.zip")
 }
 
 #Event bus configuration
