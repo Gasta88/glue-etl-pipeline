@@ -23,3 +23,18 @@ variable "cloudwatch-eventpermission-map" {
     }
   }
 }
+
+variable "shape-replication-role-medialibrary" {
+  description = "The AWS role arn used by shape source account for s3 media library replication"
+  type = string
+}
+
+variable "shape-replication-role-filesource" {
+  description = "The AWS role arn used by shape source account for s3 source file replication"
+  type = string
+}
+
+variable "shape-replication-role-bucket-storage" {
+  description = "The AWS role arn used by shape source account for s3 bucket storage file replication"
+  type = string
+}
