@@ -57,7 +57,7 @@ echo ".venv/lib/python3.8/site-packages added to zip"
 # copy main shape package structure including "common"
 cd "$lambda_absolute_path/../../../"
 zip -g -9 -r "$lambda_absolute_path/.build/lambda.zip" shape_dvaults_etl \
-          -x "**extraction/*" \
+          -x "**landing/*" \
           -x "**__pycache__/*" \
           -x "**.build/*" \
           -x "**.cache/*" \

@@ -39,7 +39,7 @@ def main():
     build_script_path: Path = (
         Path(__file__).parent.joinpath("build_lambda_package.sh").resolve()
     )
-    components: Tuple = "extraction"
+    components: Tuple = "landing"
     lambdas: Tuple = ("firehose_kinesis", "profiler")
 
     logger.info("Building lambdas (src path: %s)", src_path)
