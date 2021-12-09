@@ -91,15 +91,12 @@ all_objkeys = [obj.key for obj in list(bucket.objects.all())]
 
 for obj_key in all_objkeys:
     logger.info(f"Splititng file {obj_key}.")
-    raw_bucketname = landing_bucketname
-    key = obj_key
-    output_path = f"{landing_bucketname}/flat_json"
-    file_name = key.split("/")[-1]
+    file_name = obj_key.split("/")[-1]
 
     s3 = boto3.resource("s3", region_name="us-east-1")
-    bucket = s3.Bucket(raw_bucketname)
+    bucket = s3.Bucket(landing_bucketname)
     try:
-        predictions_arr, events_arr = split_files(bucket, key)
+        predictions_arr, events_arr = split_files(bucket, obj_key)
         logger.info(f"Extracted {len(predictions_arr)} prediction elements from file.")
         logger.info(f"Extracted {len(events_arr)} event elements from file.")
     except Exception as e:
@@ -111,7 +108,9 @@ for obj_key in all_objkeys:
         logger.info(f"There are {len(predictions)} items for {service_name}.")
         if len(predictions) > 0:
             tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
-            output_key = f"predictions/{file_name}_{service_name.upper()}.jsonl"
+            output_key = (
+                f"data/flat_json/predictions/{file_name}_{service_name.upper()}.jsonl"
+            )
             obj = s3.Object(landing_bucketname, output_key)
             with open(tmp_key, "wb") as outfile:
                 for entry in predictions:
@@ -125,7 +124,9 @@ for obj_key in all_objkeys:
         logger.info(f"There are {len(events)} items for {service_name}.")
         if len(events) > 0:
             tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
-            output_key = f"events/{file_name}_{service_name.upper()}.jsonl"
+            output_key = (
+                f"data/flat_json/events/{file_name}_{service_name.upper()}.jsonl"
+            )
             with open(tmp_key, "wb") as outfile:
                 for entry in events:
                     json.dump(entry, outfile)
