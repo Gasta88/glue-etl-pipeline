@@ -1,25 +1,23 @@
 import boto3
-from pyspark.context import SparkContext
-from awsglue.context import GlueContext
-from awsglue.job import Job
 from awsglue.utils import getResolvedOptions
-import json
+from awsglue.context import GlueContext
+from pyspark.context import SparkContext
+from awsglue.job import Job
 import sys
 import re
 
-import glob
-
-sc = SparkContext.getOrCreate()
+args = getResolvedOptions(sys.argv, ["JOB_NAME", "bucket_name"])
+bucket_name = args["bucket_name"]
+sc = SparkContext()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
+logger = glueContext.get_logger()
 
-import glob
+job = Job(glueContext)
+job.init(args["JOB_NAME"], args)
 
-input_rootpath = "/home/jupyter/jupyter_default_dir/data/split_json"
-
-all_split_jsons = glob.glob(f"{input_rootpath}/*/*.jsonl")
-
-output_path = "/home/jupyter/jupyter_default_dir/data/clean_parquet"
+input_rootpath = f"s3a://{bucket_name}/data/split_json"
+output_path = f"s3a://{bucket_name}/data/clean_parquet"
 table_names = [
     "HEADLINE_PRED_INPUT",
     "HEADLINE_PRED_OUTPUT",
@@ -33,12 +31,22 @@ table_names = [
     "SUMMARIZER_EVENT_INPUT",
     "SUMMARIZER_EVENT_OUTPUT",
 ]
+s3 = boto3.resource("s3", region_name="us-east-1")
+bucket = s3.Bucket(bucket_name)
+all_split_jsons = [
+    obj.key
+    for obj in list(bucket.objects.all())
+    if obj.key.endswith(".jsonl") and "split_jsons" in obj.key
+]
+
 for table_name in table_names:
-    # it shoulf be just one element
     file_names = [f for f in all_split_jsons if table_name in f]
     if file_names is not []:
+        logger.info(f'Converting: {"; ".join(file_names)}')
         df = spark.read.json(file_names)
         df.write.format("parquet").mode("append").save(
             f"{output_path}/{table_name}.parquet"
         )
-        # TODO: upload to bucket
+    else:
+        logger.warn("No split JSON to convert to Parquet.")
+job.commit()

@@ -93,7 +93,7 @@ if len(filtered_flat_jsons) > 0:
                 tmp_data["headline"] = re.sub(CLEANR, "", element.get(col, ""))
                 output_list.append(tmp_data)
 
-        ffile_name = f'{pred_file.split("/")[-1][:-6]}_PRED_OUTPUT.jsonl'
+        file_name = f'{pred_file.split("/")[-1][:-6]}_PRED_OUTPUT.jsonl'
         obj = s3.Object(bucket_name, f"{output_destpath}/{file_name}")
         with open(f"tmp/{file_name}", "w") as outfile:
             for entry in output_list:
