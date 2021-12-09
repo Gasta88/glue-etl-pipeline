@@ -185,7 +185,7 @@ resource "aws_iam_role_policy_attachment" "attach-lambda-firehose-policy" {
 }
 
 resource "aws_lambda_function" "lambda_processor" {
-  filename         = "../../../shape_dvaults_etl/extraction/firehose_kinesis/lambda_function.py.zip"
+  filename         = "../../../shape_dvaults_etl/landing/firehose_kinesis/lambda_function.py.zip"
   function_name    = "lambda_function"
   role             = aws_iam_role.lambda_iam.arn
   handler          = "lambda_function.lambda_handler"
