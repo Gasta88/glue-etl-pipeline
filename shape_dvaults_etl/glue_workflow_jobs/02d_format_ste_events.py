@@ -26,6 +26,12 @@ filtered_flat_jsons = [
     for obj in list(bucket.objects.all())
     if obj.key.endswith("_STE.jsonl" and "events" in obj.key)
 ]
+
+# Fetch all current files stored in shape-media-library-staging
+# TODO: if this process moves to PRod, must make this idempotent
+media_bucket = bucket = s3.Bucket("shape-media-library-staging")
+all_medias = [obj.key for obj in list(media_bucket.objects.all())]
+
 if len(filtered_flat_jsons) > 0:
     logger.info(f"Found {len(filtered_flat_jsons)} files.")
 
@@ -89,12 +95,26 @@ if len(filtered_flat_jsons) > 0:
                 if key.startswith("detail_evaluation_payload_query_")
             ]
             output_data["query"] = query_value if len(query_value) > 0 else None
-            output_data["media_lib"] = element.get(
-                "detail_evaluation_payload_medialib", None
-            )
-            output_data["media_id"] = element.get(
-                "detail_evaluation_payload_media_id", None
-            )
+            media_lib_value = element.get("detail_evaluation_payload_medialib", None)
+            media_id_value = element.get("detail_evaluation_payload_media_id", None)
+            if media_lib_value is not None and media_id_value is not None:
+                media_lookup_value = f"{media_lib_value}/{media_id_value}"
+                media_uri_value = [
+                    f"s3://shape-media-library-staging/{key}"
+                    for key in all_medias
+                    if media_lookup_value in key
+                ]
+                if media_uri_value == []:
+                    logger.warn(
+                        f"No media with id {media_id_value} found in media bucket."
+                    )
+                if len(media_uri_value) > 1:
+                    logger.warn(
+                        f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
+                    )
+                media_id_value = media_uri_value[0]
+            output_data["media_lib"] = media_lib_value
+            output_data["media_id"] = media_id_value
             output_data["media_type"] = element.get(
                 "detail_evaluation_payload_media_type", None
             )
