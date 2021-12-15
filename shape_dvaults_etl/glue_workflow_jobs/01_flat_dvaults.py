@@ -6,9 +6,10 @@ from pyspark.context import SparkContext
 from awsglue.job import Job
 import sys
 
-args = getResolvedOptions(sys.argv, ["JOB_NAME", "landing_bucketname"])
+args = getResolvedOptions(sys.argv, ["JOB_NAME", "landing_bucketname", "new_filename"])
 landing_bucketname = args["landing_bucketname"]
-sc = SparkContext()
+obj_key = args["new_filename"]
+sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 logger = glueContext.get_logger()
 
@@ -85,53 +86,51 @@ def split_files(bucket, obj_key):
 
 # Main instructions for the Glue Job
 logger.info("Splitting Firehose Kinesis file in predictions and events.")
+# s3 = boto3.resource("s3", region_name="us-east-1")
+# bucket = s3.Bucket(landing_bucketname)
+# all_objkeys = [obj.key for obj in list(bucket.objects.all())]
+
+# for obj_key in all_objkeys:
+logger.info(f"Splitting file {obj_key}.")
+file_name = obj_key.split("/")[-1]
+
 s3 = boto3.resource("s3", region_name="us-east-1")
 bucket = s3.Bucket(landing_bucketname)
-all_objkeys = [obj.key for obj in list(bucket.objects.all())]
-
-for obj_key in all_objkeys:
-    logger.info(f"Splititng file {obj_key}.")
-    file_name = obj_key.split("/")[-1]
-
-    s3 = boto3.resource("s3", region_name="us-east-1")
-    bucket = s3.Bucket(landing_bucketname)
-    try:
-        predictions_arr, events_arr = split_files(bucket, obj_key)
-        logger.info(f"Extracted {len(predictions_arr)} prediction elements from file.")
-        logger.info(f"Extracted {len(events_arr)} event elements from file.")
-    except Exception as e:
-        logger.error(
-            "Something wrong with extraction of prediction/event from file. Process stopped."
+try:
+    predictions_arr, events_arr = split_files(bucket, obj_key)
+    logger.info(f"Extracted {len(predictions_arr)} prediction elements from file.")
+    logger.info(f"Extracted {len(events_arr)} event elements from file.")
+except Exception as e:
+    logger.error(
+        "Something wrong with extraction of prediction/event from file. Process stopped."
+    )
+    sys.exit(0)
+for service_name, predictions in predictions_arr.items():
+    logger.info(f"There are {len(predictions)} items for {service_name}.")
+    if len(predictions) > 0:
+        tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
+        output_key = (
+            f"data/flat_json/predictions/{file_name}_{service_name.upper()}.jsonl"
         )
-        sys.exit(0)
-    for service_name, predictions in predictions_arr.items():
-        logger.info(f"There are {len(predictions)} items for {service_name}.")
-        if len(predictions) > 0:
-            tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
-            output_key = (
-                f"data/flat_json/predictions/{file_name}_{service_name.upper()}.jsonl"
-            )
-            obj = s3.Object(landing_bucketname, output_key)
-            with open(tmp_key, "wb") as outfile:
-                for entry in predictions:
-                    json.dump(entry, outfile)
-                    outfile.write("\n")
-            obj.put(Body=open(tmp_key, "rb"))
-        else:
-            logger.warn("No predictions extracted from file.")
+        obj = s3.Object(landing_bucketname, output_key)
+        with open(tmp_key, "wb") as outfile:
+            for entry in predictions:
+                json.dump(entry, outfile)
+                outfile.write("\n")
+        obj.put(Body=open(tmp_key, "rb"))
+    else:
+        logger.warn("No predictions extracted from file.")
 
-    for service_name, events in events_arr.items():
-        logger.info(f"There are {len(events)} items for {service_name}.")
-        if len(events) > 0:
-            tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
-            output_key = (
-                f"data/flat_json/events/{file_name}_{service_name.upper()}.jsonl"
-            )
-            with open(tmp_key, "wb") as outfile:
-                for entry in events:
-                    json.dump(entry, outfile)
-                    outfile.write("\n")
-            obj.put(Body=open(tmp_key, "rb"))
-        else:
-            logger.warn("No events extracted from file.")
+for service_name, events in events_arr.items():
+    logger.info(f"There are {len(events)} items for {service_name}.")
+    if len(events) > 0:
+        tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
+        output_key = f"data/flat_json/events/{file_name}_{service_name.upper()}.jsonl"
+        with open(tmp_key, "wb") as outfile:
+            for entry in events:
+                json.dump(entry, outfile)
+                outfile.write("\n")
+        obj.put(Body=open(tmp_key, "rb"))
+    else:
+        logger.warn("No events extracted from file.")
 job.commit()
