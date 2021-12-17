@@ -6,18 +6,31 @@ from awsglue.job import Job
 import sys
 import re
 
-args = getResolvedOptions(sys.argv, ["JOB_NAME", "bucket_name"])
-bucket_name = args["bucket_name"]
+
 sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 logger = glueContext.get_logger()
 
+logger.info("Get run properties for the Glue workflow.")
+args = getResolvedOptions(
+    sys.argv,
+    ["WORKFLOW_NAME", "WORKFLOW_RUN_ID", "JOB_NAME"],
+)
+workflow_name = args["WORKFLOW_NAME"]
+workflow_run_id = args["WORKFLOW_RUN_ID"]
+glue = boto3.client("glue")
+run_properties = glue.get_workflow_run_properties(
+    Name=workflow_name, RunId=workflow_run_id
+)["RunProperties"]
+
 job = Job(glueContext)
 job.init(args["JOB_NAME"], args)
 
+bucket_name = run_properties["landing_bucketname"]
 input_rootpath = f"s3a://{bucket_name}/data/flat_json"
 output_path = f"s3a://{bucket_name}/data/clean_parquet"
+file_name = run_properties["dvault_filename"].split("/")[-1]
 table_names = [
     "HEADLINE_PRED",
     "HEADLINE_EVENT",
@@ -31,7 +44,7 @@ bucket = s3.Bucket(bucket_name)
 all_jsons = [
     obj.key
     for obj in list(bucket.objects.all())
-    if obj.key.endswith(".jsonl") and "flat_jsons" in obj.key
+    if ("flat_json" in obj.key) and (file_name in obj.key)
 ]
 
 for table_name in table_names:

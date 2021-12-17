@@ -1,20 +1,33 @@
 import json
 import boto3
+import logging
 from awsglue.utils import getResolvedOptions
-from awsglue.context import GlueContext
-from pyspark.context import SparkContext
-from awsglue.job import Job
 import sys
 
-args = getResolvedOptions(sys.argv, ["JOB_NAME", "landing_bucketname", "new_filename"])
-landing_bucketname = args["landing_bucketname"]
-obj_key = args["new_filename"]
-sc = SparkContext.getOrCreate()
-glueContext = GlueContext(sc)
-logger = glueContext.get_logger()
+# Setup logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
-job = Job(glueContext)
-job.init(args["JOB_NAME"], args)
+logger.info("Get run properties for the Glue workflow.")
+args = getResolvedOptions(
+    sys.argv,
+    ["WORKFLOW_NAME", "WORKFLOW_RUN_ID"],
+)
+workflow_name = args["WORKFLOW_NAME"]
+workflow_run_id = args["WORKFLOW_RUN_ID"]
+
+glue = boto3.client("glue")
+run_properties = glue.get_workflow_run_properties(
+    Name=workflow_name, RunId=workflow_run_id
+)["RunProperties"]
+
+landing_bucketname = run_properties["landing_bucketname"]
+obj_key = run_properties["dvault_filename"]
 
 
 def flatten_data(y):
@@ -85,12 +98,6 @@ def split_files(bucket, obj_key):
 
 
 # Main instructions for the Glue Job
-logger.info("Splitting Firehose Kinesis file in predictions and events.")
-# s3 = boto3.resource("s3", region_name="us-east-1")
-# bucket = s3.Bucket(landing_bucketname)
-# all_objkeys = [obj.key for obj in list(bucket.objects.all())]
-
-# for obj_key in all_objkeys:
 logger.info(f"Splitting file {obj_key}.")
 file_name = obj_key.split("/")[-1]
 
@@ -133,4 +140,3 @@ for service_name, events in events_arr.items():
         obj.put(Body=open(tmp_key, "rb"))
     else:
         logger.warn("No events extracted from file.")
-job.commit()

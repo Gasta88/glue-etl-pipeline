@@ -29,6 +29,10 @@ resource "aws_s3_bucket" "dvault-bucket" {
       }
     }
   }
+  force_destroy = true
+  lifecycle {
+    prevent_destroy = false
+  }
   versioning {
     enabled = true
   }
@@ -68,34 +72,6 @@ resource "aws_s3_bucket_policy" "dvault-bucket-policy" {
     ]
   })
 }
-
-resource "aws_iam_policy" "s3-data-policy" {
-  name = "data-policy-dvault-${terraform.workspace}"
-  path = "/"
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression result to valid JSON syntax.
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "s3:GetObject", "s3:PutObject"
-        ]
-        Effect   = "Allow"
-        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/*"
-      },
-      {
-        Action = [
-          "s3:ListBucket"
-        ]
-        Effect   = "Allow"
-        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}"
-      }
-    ]
-  })
-}
-
 
 resource "aws_s3_bucket_object" "scripts-folder" {
   for_each = fileset("../../shape_dvaults_etl/glue_workflow_jobs", "*.py")
@@ -139,6 +115,40 @@ resource "aws_cloudtrail" "dvault-trail" {
       values = ["${aws_s3_bucket.dvault-bucket.arn}/data/raw/"]
     }
   }
+  # advanced_event_selector {
+  #   name = "s3-event-trail-dvault-${terraform.workspace}"
+
+  #   field_selector {
+  #     field  = "eventCategory"
+  #     equals = ["Data"]
+  #   }
+
+  #   field_selector {
+  #     field = "eventName"
+
+  #     equals = ["PutObject"
+  #     ]
+  #   }
+
+  #   field_selector {
+  #     field = "resources.ARN"
+
+  #     #The trailing slash is intentional; do not exclude it.
+  #     equals = [
+  #       "${aws_s3_bucket.dvault-bucket.arn}/data/raw/"
+  #     ]
+  #   }
+
+  #   field_selector {
+  #     field  = "readOnly"
+  #     equals = ["false"]
+  #   }
+
+  #   field_selector {
+  #     field  = "resources.type"
+  #     equals = ["AWS::S3::Object"]
+  #   }
+  # }
 }
 
 resource "aws_cloudwatch_event_rule" "glue-dvault-send-rule" {
@@ -214,7 +224,7 @@ resource "aws_cloudwatch_event_target" "dvault-event-target" {
 resource "aws_iam_role" "glue-role" {
   name                = "glue-service-role-${terraform.workspace}"
   path                = "/"
-  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole"]
+  managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole", aws_iam_policy.s3-data-policy.arn]
   # Terraform's "jsonencode" function converts a
   # Terraform expression result to valid JSON syntax.
   assume_role_policy = jsonencode({
@@ -232,15 +242,61 @@ resource "aws_iam_role" "glue-role" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "attach-s3-data-policy-glue-role-policy" {
-  role       = aws_iam_role.glue-role.name
-  policy_arn = aws_iam_policy.s3-data-policy.arn
+resource "aws_iam_policy" "s3-data-policy" {
+  name = "data-policy-dvault-${terraform.workspace}"
+  path = "/"
+
+  # Terraform's "jsonencode" function converts a
+  # Terraform expression result to valid JSON syntax.
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = [
+          "s3:GetObject", "s3:PutObject"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/*"
+      },
+      {
+        Action = [
+          "s3:ListBucket"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}"
+      },
+      {
+        Action = [
+          "s3:DeleteObject"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/data/*"
+      }
+    ]
+  })
 }
 
+# resource "aws_iam_role_policy_attachment" "attach-s3-data-policy-glue-role-policy" {
+#   role       = aws_iam_role.glue-role.name
+#   policy_arn = aws_iam_policy.s3-data-policy.arn
+#   # This does not happen in some deployment, making it impossible to read the Glue scripts from the S3 bucket.
+#   depends_on = [
+#     aws_iam_role.glue-role, aws_iam_policy.s3-data-policy
+#   ]
+# }
+
+resource "aws_cloudwatch_log_group" "dvault-glue-log-group" {
+  name              = "dvault-glue-log-group"
+  retention_in_days = 7
+}
 
 resource "aws_glue_workflow" "dvault-glue-workflow" {
   name        = "s3-event-glue-dvault-workflow-${terraform.workspace}"
   description = "Glue workflow triggered by S3 PutObject Event"
+  default_run_properties = {
+    "landing_bucketname" : aws_s3_bucket.dvault-bucket.bucket,
+    "dvault_filename" : "?????"
+  }
 }
 
 resource "aws_glue_trigger" "prejob-trigger" {
@@ -251,6 +307,9 @@ resource "aws_glue_trigger" "prejob-trigger" {
   actions {
     job_name = aws_glue_job.pre-job.name
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 # add EventBatchingCondition because there is no dedicated attribute in Terraform
@@ -259,7 +318,7 @@ resource "null_resource" "update-pre-job-trigger" {
     command = "aws glue update-trigger --name dvault-pre-job-trigger-${terraform.workspace} --trigger-update '{\"Actions\":[{\"JobName\":\"dvault-pre-job-${terraform.workspace}\",\"Arguments\":{}}],\"EventBatchingCondition\":{\"BatchSize\":1,\"BatchWindow\":450}}'"
   }
   depends_on = [
-    aws_glue_trigger.prejob-trigger,
+    aws_glue_trigger.prejob-trigger, aws_glue_workflow.dvault-glue-workflow
   ]
 }
 
@@ -273,13 +332,16 @@ resource "aws_glue_job" "pre-job" {
   command {
     name            = "pythonshell"
     python_version  = 3
-    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/update_workflow_property.py"
+    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/update_workflow_properties.py"
   }
 
   default_arguments = {
-    "--job-language" : "python",
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--transition_state" : "STARTED"
+    "--transition_state" : "STARTED",
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
   }
 }
 
@@ -297,6 +359,9 @@ resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
@@ -313,6 +378,9 @@ resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
       state    = "FAILED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_job" "flat-dvault-job" {
@@ -329,8 +397,11 @@ resource "aws_glue_job" "flat-dvault-job" {
   }
 
   default_arguments = {
-    "--job-language" : "python",
-    "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/"
+    "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
   }
 }
 
@@ -347,9 +418,11 @@ resource "aws_glue_job" "clean-up-job" {
     script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/clean_up.py"
   }
   default_arguments = {
-    "--job-language" : "python",
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--bucket_name" : aws_s3_bucket.dvault-bucket.bucket
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
 
   }
 }
@@ -368,6 +441,9 @@ resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
@@ -384,6 +460,9 @@ resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
       state    = "FAILED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_job" "convert-to-parquet-job" {
@@ -400,9 +479,11 @@ resource "aws_glue_job" "convert-to-parquet-job" {
   }
   default_arguments = {
     "--job-bookmark-option" : "job-bookmark-enable",
-    "--job-language" : "python",
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--output_path" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/data/clean-parquet"
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
   }
 }
 
@@ -420,6 +501,9 @@ resource "aws_glue_trigger" "dvault-parquet-crawler-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_trigger" "dvault-parquet-crawler-fail-trigger" {
@@ -436,6 +520,9 @@ resource "aws_glue_trigger" "dvault-parquet-crawler-fail-trigger" {
       state    = "FAILED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_crawler" "dvault-parquet-crawler" {
@@ -479,6 +566,9 @@ resource "aws_glue_trigger" "postjob-pass-trigger" {
       crawl_state  = "SUCCEEDED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 resource "aws_glue_trigger" "postjob-fail-trigger" {
@@ -495,6 +585,9 @@ resource "aws_glue_trigger" "postjob-fail-trigger" {
       crawl_state  = "FAILED"
     }
   }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
 }
 
 
@@ -508,13 +601,16 @@ resource "aws_glue_job" "post-job" {
   command {
     name            = "pythonshell"
     python_version  = 3
-    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/update_workflow_property.py"
+    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/update_workflow_properties.py"
   }
 
   default_arguments = {
-    "--job-language" : "python",
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--transition_state" : "COMPLETED"
+    "--transition_state" : "COMPLETED",
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
   }
 }
 
