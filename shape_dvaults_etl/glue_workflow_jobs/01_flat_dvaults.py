@@ -28,40 +28,42 @@ run_properties = glue.get_workflow_run_properties(
 
 landing_bucketname = run_properties["landing_bucketname"]
 obj_key = run_properties["dvault_filename"]
+media_bucketname = run_properties["media_bucketname"]
 
 
-def flatten_data(y):
-    """
-    Recursive function to flatten the JSON structure.
+# def flatten_data(y):
+#     """
+#     Recursive function to flatten the JSON structure.
 
-    :param y: nested JSON element.
-    :return: flat JSON element.
-    """
-    out = {}
+#     :param y: nested JSON element.
+#     :return: flat JSON element.
+#     """
+#     out = {}
 
-    def flatten(x, name=""):
-        if type(x) is dict:
-            for a in x:
-                flatten(x[a], name + a + "_")
-        elif type(x) is list:
-            i = 0
-            for a in x:
-                flatten(a, name + str(i) + "_")
-                i += 1
-        else:
-            out[name[:-1]] = x
+#     def flatten(x, name=""):
+#         if type(x) is dict:
+#             for a in x:
+#                 flatten(x[a], name + a + "_")
+#         elif type(x) is list:
+#             i = 0
+#             for a in x:
+#                 flatten(a, name + str(i) + "_")
+#                 i += 1
+#         else:
+#             out[name[:-1]] = x
 
-    flatten(y)
-    return out
+#     flatten(y)
+#     return out
 
 
-def split_files(bucket, obj_key):
+def split_files(bucket, obj_key, all_medias):
     """
     Divide Firehose Kinesis file in PREDICTIONS and EVENTS files.
     Label the dedicated service name in the file name.
 
     :param bucket: S3 bucket here the file is stored.
     :param obj_key: String that identigy the file to be split.
+    :param all_media: List of URI from Shape media bucket.
     :return predictions_arr: list of JSON predictions extracted from the file
     :return events_arr: list of JSON events extracted from the file
     """
@@ -81,11 +83,44 @@ def split_files(bucket, obj_key):
         if el[-2:] != "}}":
             el = el + "}}"
         try:
-            flat_el = flatten_data(json.loads(el))
+            # flat_el = flatten_data(json.loads(el))
+            # TODO: keep structure intact, explode them once DS will tell you what to expose
+            flat_el = json.loads(el)
             if flat_el["detail-type"] == "DVaultPredictionEvent":
-                predictions_arr[flat_el["detail_prediction_service"]].append(flat_el)
+                # predictions_arr[flat_el["detail_prediction_service"]].append(flat_el)
+                predictions_arr[flat_el["detail"]["prediction"]["service"]].append(
+                    flat_el
+                )
             elif flat_el["detail-type"] == "DVaultEvaluationEvent":
-                service_name = flat_el["detail_evaluation_prediction_id"].split("#")[-1]
+                # service_name = flat_el["detail_evaluation_prediction_id"].split("#")[-1]
+                service_name = flat_el["detail"]["evaluation"]["prediction_id"].split(
+                    "#"
+                )[-1]
+                if service_name == "ste":
+                    media_id_value = flat_el["detail"]["evaluation"]["payload"][
+                        "media_id"
+                    ]
+                    media_lib_value = flat_el["detail"]["evaluation"]["payload"][
+                        "medialib"
+                    ]
+                    media_lookup_value = f"{media_lib_value}/{media_id_value}"
+                    media_uri_value = [
+                        f"s3://{media_bucketname}/{key}"
+                        for key in all_medias
+                        if media_lookup_value in key
+                    ]
+                    if media_uri_value == []:
+                        logger.warn(
+                            f"No media with id {media_id_value} found in media bucket."
+                        )
+                        media_uri_value = [media_id_value]
+                    if len(media_uri_value) > 1:
+                        logger.info(
+                            f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
+                        )
+                    flat_el["detail"]["evaluation"]["payload"][
+                        "media_id"
+                    ] = media_uri_value[0]
                 events_arr[service_name].append(flat_el)
             else:
                 e = f'Unrecognized event type inside file: {flat_el["detail-type"]}'
@@ -103,8 +138,10 @@ file_name = obj_key.split("/")[-1]
 
 s3 = boto3.resource("s3", region_name="us-east-1")
 bucket = s3.Bucket(landing_bucketname)
+media_bucket = s3.Bucket(media_bucketname)
+all_medias = [obj.key for obj in list(media_bucket.objects.all())]
 try:
-    predictions_arr, events_arr = split_files(bucket, obj_key)
+    predictions_arr, events_arr = split_files(bucket, obj_key, all_medias)
     logger.info(f"Extracted {len(predictions_arr)} prediction elements from file.")
     logger.info(f"Extracted {len(events_arr)} event elements from file.")
 except Exception as e:
