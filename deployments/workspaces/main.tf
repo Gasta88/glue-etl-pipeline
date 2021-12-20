@@ -88,17 +88,17 @@ resource "aws_s3_bucket_object" "data-profiler-folder" {
   key    = "data-profile/"
 }
 
-resource "aws_s3_bucket_object" "log-folder" {
-  bucket = aws_s3_bucket.dvault-bucket.bucket
-  acl    = "private"
-  key    = "logs/"
-}
+# resource "aws_s3_bucket_object" "log-folder" {
+#   bucket = aws_s3_bucket.dvault-bucket.bucket
+#   acl    = "private"
+#   key    = "logs/"
+# }
 
-resource "aws_s3_bucket_object" "data-catalog-folder" {
-  bucket = aws_s3_bucket.dvault-bucket.bucket
-  acl    = "private"
-  key    = "data-catalog/"
-}
+# resource "aws_s3_bucket_object" "athena-results-folder" {
+#   bucket = aws_s3_bucket.dvault-bucket.bucket
+#   acl    = "private"
+#   key    = "athena-results/"
+# }
 
 #--------------------------- EventBridge and Cloudtrail
 resource "aws_cloudtrail" "dvault-trail" {
@@ -106,49 +106,49 @@ resource "aws_cloudtrail" "dvault-trail" {
   s3_bucket_name                = aws_s3_bucket.dvault-bucket.bucket
   s3_key_prefix                 = "cloudtrail"
   include_global_service_events = false
-  event_selector {
-    read_write_type           = "WriteOnly"
-    include_management_events = false
+  # event_selector {
+  #   read_write_type           = "WriteOnly"
+  #   include_management_events = false
 
-    data_resource {
-      type   = "AWS::S3::Object"
-      values = ["${aws_s3_bucket.dvault-bucket.arn}/data/raw/"]
-    }
-  }
-  # advanced_event_selector {
-  #   name = "s3-event-trail-dvault-${terraform.workspace}"
-
-  #   field_selector {
-  #     field  = "eventCategory"
-  #     equals = ["Data"]
-  #   }
-
-  #   field_selector {
-  #     field = "eventName"
-
-  #     equals = ["PutObject"
-  #     ]
-  #   }
-
-  #   field_selector {
-  #     field = "resources.ARN"
-
-  #     #The trailing slash is intentional; do not exclude it.
-  #     equals = [
-  #       "${aws_s3_bucket.dvault-bucket.arn}/data/raw/"
-  #     ]
-  #   }
-
-  #   field_selector {
-  #     field  = "readOnly"
-  #     equals = ["false"]
-  #   }
-
-  #   field_selector {
-  #     field  = "resources.type"
-  #     equals = ["AWS::S3::Object"]
+  #   data_resource {
+  #     type   = "AWS::S3::Object"
+  #     values = ["${aws_s3_bucket.dvault-bucket.arn}/data/raw/"]
   #   }
   # }
+  advanced_event_selector {
+    name = "s3-event-trail-dvault-${terraform.workspace}"
+
+    field_selector {
+      field  = "eventCategory"
+      equals = ["Data"]
+    }
+
+    field_selector {
+      field = "eventName"
+
+      equals = ["PutObject", "CopyObject"
+      ]
+    }
+
+    field_selector {
+      field = "resources.ARN"
+
+      #The trailing slash is intentional; do not exclude it.
+      equals = [
+        "${aws_s3_bucket.dvault-bucket.arn}/data/raw/"
+      ]
+    }
+
+    field_selector {
+      field  = "readOnly"
+      equals = ["false"]
+    }
+
+    field_selector {
+      field  = "resources.type"
+      equals = ["AWS::S3::Object"]
+    }
+  }
 }
 
 resource "aws_cloudwatch_event_rule" "glue-dvault-send-rule" {
@@ -164,7 +164,7 @@ resource "aws_cloudwatch_event_rule" "glue-dvault-send-rule" {
           "prefix" : "data/raw/"
         }]
       },
-      "eventName" : ["PutObject"]
+      "eventName" : ["PutObject", "CopyObject"]
     }
   })
 }
@@ -221,6 +221,11 @@ resource "aws_cloudwatch_event_target" "dvault-event-target" {
 
 
 #--------------------------- AWS Glue resources
+
+resource "aws_glue_catalog_database" "aws-glue-catalog-database" {
+  name = "dvault_glue_shape_${terraform.workspace}"
+}
+
 resource "aws_iam_role" "glue-role" {
   name                = "glue-service-role-${terraform.workspace}"
   path                = "/"
@@ -276,14 +281,6 @@ resource "aws_iam_policy" "s3-data-policy" {
   })
 }
 
-# resource "aws_iam_role_policy_attachment" "attach-s3-data-policy-glue-role-policy" {
-#   role       = aws_iam_role.glue-role.name
-#   policy_arn = aws_iam_policy.s3-data-policy.arn
-#   # This does not happen in some deployment, making it impossible to read the Glue scripts from the S3 bucket.
-#   depends_on = [
-#     aws_iam_role.glue-role, aws_iam_policy.s3-data-policy
-#   ]
-# }
 
 resource "aws_cloudwatch_log_group" "dvault-glue-log-group" {
   name              = "dvault-glue-log-group"
@@ -295,6 +292,7 @@ resource "aws_glue_workflow" "dvault-glue-workflow" {
   description = "Glue workflow triggered by S3 PutObject Event"
   default_run_properties = {
     "landing_bucketname" : aws_s3_bucket.dvault-bucket.bucket,
+    "media_bucketname" : "shape-media-library-staging",
     "dvault_filename" : "?????"
   }
 }
@@ -530,26 +528,12 @@ resource "aws_glue_crawler" "dvault-parquet-crawler" {
   name          = "parquet-clean-crawler-${terraform.workspace}"
   description   = "Crawler for Parquet cleaned and profiled"
   role          = aws_iam_role.glue-role.arn
+  table_prefix  = "dvault_glue_${terraform.workspace}_"
 
-  catalog_target {
-    database_name = aws_glue_catalog_database.aws-glue-catalog-database.name
-    tables        = [aws_glue_catalog_table.aws-glue-catalog-table.name]
+  s3_target {
+    path       = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data/clean-parquet/"
+    exclusions = ["**_SUCCESS", "**crc", "**csv", "**metadata"]
   }
-
-  schema_change_policy {
-    delete_behavior = "LOG"
-    update_behavior = "UPDATE_IN_DATABASE"
-
-  }
-
-  configuration = <<EOF
-{
-  "Version":1.0,
-  "Grouping": {
-    "TableGroupingPolicy": "CombineCompatibleSchemas"
-  }
-}
-EOF
 }
 
 resource "aws_glue_trigger" "postjob-pass-trigger" {
@@ -614,17 +598,17 @@ resource "aws_glue_job" "post-job" {
   }
 }
 
-resource "aws_glue_catalog_database" "aws-glue-catalog-database" {
-  name = "dvault-glue-data-catalog-${terraform.workspace}"
-}
+# resource "aws_glue_catalog_table" "aws-glue-catalog-table" {
+#   name          = "dvault_parquet_${terraform.workspace}"
+#   database_name = aws_glue_catalog_database.aws-glue-catalog-database.name
+#   table_type    = "EXTERNAL_TABLE"
+#   storage_descriptor {
+#     location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data-catalog/"
+#   }
+# }
 
-resource "aws_glue_catalog_table" "aws-glue-catalog-table" {
-  name          = "dvault_parquet_${terraform.workspace}"
-  database_name = aws_glue_catalog_database.aws-glue-catalog-database.name
-  table_type    = "EXTERNAL_TABLE"
-  storage_descriptor {
-    location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data-catalog/"
-  }
-}
-
-
+# resource "aws_athena_database" "dvault-athena-database" {
+#   name          = "dvault_athena_shape_${terraform.workspace}"
+#   bucket        = "${aws_s3_bucket.dvault-bucket.bucket}/athena-results/"
+#   force_destroy = true
+# }
