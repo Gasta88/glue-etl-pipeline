@@ -1,5 +1,8 @@
+# Terraform
 .terraform
 .terraform.lock.hcl
+deployments/*.json
+deployments/*.out
 
 # Intent Classifier models
 resources/
