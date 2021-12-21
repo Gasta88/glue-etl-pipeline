@@ -341,6 +341,9 @@ resource "aws_glue_job" "pre-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
+  execution_property {
+    max_concurrent_runs = 25
+  }
 }
 
 resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
@@ -401,6 +404,9 @@ resource "aws_glue_job" "flat-dvault-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
+  execution_property {
+    max_concurrent_runs = 25
+  }
 }
 
 resource "aws_glue_job" "clean-up-job" {
@@ -422,6 +428,9 @@ resource "aws_glue_job" "clean-up-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
 
+  }
+  execution_property {
+    max_concurrent_runs = 25
   }
 }
 
@@ -482,6 +491,9 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
+  }
+  execution_property {
+    max_concurrent_runs = 25
   }
 }
 
@@ -595,6 +607,9 @@ resource "aws_glue_job" "post-job" {
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
+  }
+  execution_property {
+    max_concurrent_runs = 25
   }
 }
 

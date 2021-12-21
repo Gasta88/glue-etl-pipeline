@@ -1,0 +1,64 @@
+# region MAIN_SETTINGS
+
+default:
+  image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
+
+  tags:
+    - ai-dev-multiple-runners
+
+stages:
+  - check
+  - test
+  - doc
+
+# endregion MAIN_SETTINGS
+
+# region TEMPLATES
+
+.poetry_template: &poetry_template
+  before_script:
+    # - export CONFIG_CACHE_DURATION=0.5
+    # - export POETRY_VERSION=1.1.11
+    # - export POETRY_HOME=./poetry
+    # - export PATH=$PATH:./poetry/bin
+    # - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+    # - python -m venv .venv
+    # - source .venv/bin/activate
+    # - pip install --upgrade pip
+
+# endregion TEMPLATES
+
+# static python code analysis with pylint (pipeline will fail if quality is lower than expected one)
+pylint:
+  <<: *poetry_template
+  only:
+    - master
+    - auto-merge
+  stage: check
+  script:
+    - git submodule add ../../ai/python-code-check.git
+    - poetry install -n -v
+    # - poetry run pylint doceboai_commons --rcfile=python-code-check/pylint.ini --fail-under=8
+
+# run python unit tests
+unit_test:
+  <<: *poetry_template
+  only:
+    - master
+    - auto-merge
+    - unit-test
+  stage: test
+  script:
+    # - poetry install -n --extras "mysql elasticsearch apispec kfserving_helpers"
+    # - poetry run nosetests -v
+
+# generates sphinx documentation and upload it to the docs bucket
+sphinx_doc:
+  <<: *poetry_template
+  only:
+    - master
+    - sphinx-doc
+  stage: doc
+  script:
+    - poetry install -n --extras "mysql elasticsearch apispec kfserving_helpers"
+    - sphinx-build -b html docs .sphinx_build
