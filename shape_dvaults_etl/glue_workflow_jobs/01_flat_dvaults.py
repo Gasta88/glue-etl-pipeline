@@ -26,9 +26,14 @@ run_properties = glue.get_workflow_run_properties(
     Name=workflow_name, RunId=workflow_run_id
 )["RunProperties"]
 
-landing_bucketname = run_properties["landing_bucketname"]
-obj_key = run_properties["dvault_filename"]
-media_bucketname = run_properties["media_bucketname"]
+# Job parameters
+LANDING_BUCKETNAME = run_properties["landing_bucketname"]
+OBJ_KEY = run_properties["dvault_filename"]
+MEDIA_BUCKETNAME = run_properties["media_bucketname"]
+s3 = boto3.resource("s3", region_name="us-east-1")
+BUCKET = s3.Bucket(LANDING_BUCKETNAME)
+media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
+ALL_MEDIAS = [obj.key for obj in list(media_bucket.objects.all())]
 
 
 # def flatten_data(y):
@@ -56,23 +61,47 @@ media_bucketname = run_properties["media_bucketname"]
 #     return out
 
 
-def split_files(bucket, obj_key, all_medias):
+def _replace_image_uri(el, service_name):
+    """
+    Replace media_id attribute for STE EVENTS only tot he S3 URI.
+
+    :param el: dictionary that represent the event.
+    :param service_name: element service name (only STE is accepted).
+    :return new_el: modified version of the STE EVENT element.
+    """
+    if service_name == "ste":
+        media_id_value = el["detail"]["evaluation"]["payload"]["media_id"]
+        media_lib_value = el["detail"]["evaluation"]["payload"]["medialib"]
+        media_lookup_value = f"{media_lib_value}/{media_id_value}"
+        media_uri_value = [
+            f"s3://{MEDIA_BUCKETNAME}/{key}"
+            for key in ALL_MEDIAS
+            if media_lookup_value in key
+        ]
+        if media_uri_value == []:
+            logger.warn(f"No media with id {media_id_value} found in media bucket.")
+            media_uri_value = [media_id_value]
+        if len(media_uri_value) > 1:
+            logger.info(
+                f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
+            )
+        el["detail"]["evaluation"]["payload"]["media_id"] = media_uri_value[0]
+    return el
+
+
+def split_files(tmp_filename):
     """
     Divide Firehose Kinesis file in PREDICTIONS and EVENTS files.
     Label the dedicated service name in the file name.
 
-    :param bucket: S3 bucket here the file is stored.
-    :param obj_key: String that identigy the file to be split.
-    :param all_media: List of URI from Shape media bucket.
+    :param tmp_filename: location of the tmp file where object content is stored.
     :return predictions_arr: list of JSON predictions extracted from the file
     :return events_arr: list of JSON events extracted from the file
     """
     predictions_arr = {"summarizer": [], "headline": [], "ste": []}
     events_arr = {"summarizer": [], "headline": [], "ste": []}
     content = []
-    obj = bucket.Object(obj_key)
-    obj.download_file("/tmp/tmp_file")
-    with open("/tmp/tmp_file") as f:
+    with open(tmp_filename) as f:
         content = f.readlines()
     content = content[0].replace('}{"version"', '}${"version"')
     for el in content.split("}}$"):
@@ -96,32 +125,8 @@ def split_files(bucket, obj_key, all_medias):
                 service_name = flat_el["detail"]["evaluation"]["prediction_id"].split(
                     "#"
                 )[-1]
-                if service_name == "ste":
-                    media_id_value = flat_el["detail"]["evaluation"]["payload"][
-                        "media_id"
-                    ]
-                    media_lib_value = flat_el["detail"]["evaluation"]["payload"][
-                        "medialib"
-                    ]
-                    media_lookup_value = f"{media_lib_value}/{media_id_value}"
-                    media_uri_value = [
-                        f"s3://{media_bucketname}/{key}"
-                        for key in all_medias
-                        if media_lookup_value in key
-                    ]
-                    if media_uri_value == []:
-                        logger.warn(
-                            f"No media with id {media_id_value} found in media bucket."
-                        )
-                        media_uri_value = [media_id_value]
-                    if len(media_uri_value) > 1:
-                        logger.info(
-                            f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
-                        )
-                    flat_el["detail"]["evaluation"]["payload"][
-                        "media_id"
-                    ] = media_uri_value[0]
-                events_arr[service_name].append(flat_el)
+                new_flat_el = _replace_image_uri(flat_el, service_name)
+                events_arr[service_name].append(new_flat_el)
             else:
                 e = f'Unrecognized event type inside file: {flat_el["detail-type"]}'
                 logger.error(e)
@@ -132,16 +137,41 @@ def split_files(bucket, obj_key, all_medias):
     return (predictions_arr, events_arr)
 
 
-# Main instructions for the Glue Job
-logger.info(f"Splitting file {obj_key}.")
-file_name = obj_key.split("/")[-1]
+def save_flat_json(el_dict, el_type):
+    """
+    Get list of dictionaries and store them to the respective S3 prefix.
 
-s3 = boto3.resource("s3", region_name="us-east-1")
-bucket = s3.Bucket(landing_bucketname)
-media_bucket = s3.Bucket(media_bucketname)
-all_medias = [obj.key for obj in list(media_bucket.objects.all())]
+    :param el_dict: dictionary made of arrays of dictionaries.
+    :param el_type: either EVENTS or PREDICTIONS
+    """
+    file_name = OBJ_KEY.split("/")[-1]
+    for service_name, elements in el_dict.items():
+        logger.info(f"There are {len(elements)} items for {service_name}.")
+        if len(elements) > 0:
+            tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
+            output_key = (
+                f"data/flat_json/{el_type}/{file_name}_{service_name.upper()}.jsonl"
+            )
+            obj = s3.Object(LANDING_BUCKETNAME, output_key)
+            with open(tmp_key, "wb") as outfile:
+                for el in elements:
+                    json.dump(el, outfile)
+                    outfile.write("\n")
+            obj.put(Body=open(tmp_key, "rb"))
+        else:
+            logger.warn(f"No {el_type} extracted from file.")
+    return
+
+
+# Main instructions for the Glue Job
+logger.info(f"Splitting file {OBJ_KEY}.")
+file_name = OBJ_KEY.split("/")[-1]
+tmp_filename = "/tmp/tmp_file"
+obj = BUCKET.Object(OBJ_KEY)
+obj.download_file(tmp_filename)
+
 try:
-    predictions_arr, events_arr = split_files(bucket, obj_key, all_medias)
+    predictions_arr, events_arr = split_files(tmp_filename)
     logger.info(f"Extracted {len(predictions_arr)} prediction elements from file.")
     logger.info(f"Extracted {len(events_arr)} event elements from file.")
 except Exception as e:
@@ -149,31 +179,5 @@ except Exception as e:
         "Something wrong with extraction of prediction/event from file. Process stopped."
     )
     sys.exit(0)
-for service_name, predictions in predictions_arr.items():
-    logger.info(f"There are {len(predictions)} items for {service_name}.")
-    if len(predictions) > 0:
-        tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
-        output_key = (
-            f"data/flat_json/predictions/{file_name}_{service_name.upper()}.jsonl"
-        )
-        obj = s3.Object(landing_bucketname, output_key)
-        with open(tmp_key, "wb") as outfile:
-            for entry in predictions:
-                json.dump(entry, outfile)
-                outfile.write("\n")
-        obj.put(Body=open(tmp_key, "rb"))
-    else:
-        logger.warn("No predictions extracted from file.")
-
-for service_name, events in events_arr.items():
-    logger.info(f"There are {len(events)} items for {service_name}.")
-    if len(events) > 0:
-        tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
-        output_key = f"data/flat_json/events/{file_name}_{service_name.upper()}.jsonl"
-        with open(tmp_key, "wb") as outfile:
-            for entry in events:
-                json.dump(entry, outfile)
-                outfile.write("\n")
-        obj.put(Body=open(tmp_key, "rb"))
-    else:
-        logger.warn("No events extracted from file.")
+save_flat_json(predictions_arr, "predictions")
+save_flat_json(events_arr, "events")
