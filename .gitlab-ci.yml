@@ -17,14 +17,17 @@ stages:
 
 .poetry_template: &poetry_template
   before_script:
-    # - export CONFIG_CACHE_DURATION=0.5
-    # - export POETRY_VERSION=1.1.11
-    # - export POETRY_HOME=./poetry
-    # - export PATH=$PATH:./poetry/bin
-    # - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-    # - python -m venv .venv
-    # - source .venv/bin/activate
-    # - pip install --upgrade pip
+    - export CONFIG_CACHE_DURATION=0.5
+    - export POETRY_VERSION=1.1.11
+    - export POETRY_HOME=./poetry
+    - export PATH=$PATH:./poetry/bin
+    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+
+# template to install terraform binaries
+.terraform_install_template: &terraform_install_template
+  - wget "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -O /tmp/tf.zip
+  - unzip /tmp/tf.zip -d /tmp
+  - mv /tmp/terraform /usr/local/bin/terraform
 
 # endregion TEMPLATES
 
@@ -38,10 +41,39 @@ pylint:
   script:
     - git submodule add ../../ai/python-code-check.git
     - poetry install -n -v
-    # - poetry run pylint doceboai_commons --rcfile=python-code-check/pylint.ini --fail-under=8
+    - poetry run pylint shape_dvaults_etl --rcfile=python-code-check/pylint.ini --fail-under=8
+# check terraform file quality
+terraform:
+  only:
+    - master
+    - auto-merge
+  stage: check
+  image: hashicorp/terraform:light
+  script:
+    - cd deployments
+    - terraform workspace new testing
+    - terraform fmt -check
+    - terraform validate
+
+# run terraform unit tests
+terraform_unit_test:
+  <<: *terraform_install_template
+  only:
+    - master
+    - auto-merge
+    - unit-test
+  stage: test
+  script:
+    - poetry install -n -v
+    - cd deployments
+    - terraform workspace new testing
+    - terraform plan -out=plan.out
+    - terraform show -json > plan.json
+    - cd ..
+    -  #TODO: create unittest to inspect terraform plan json file
 
 # run python unit tests
-unit_test:
+python_unit_test:
   <<: *poetry_template
   only:
     - master
@@ -49,8 +81,13 @@ unit_test:
     - unit-test
   stage: test
   script:
-    # - poetry install -n --extras "mysql elasticsearch apispec kfserving_helpers"
-    # - poetry run nosetests -v
+    - poetry install -n -v
+    - coverage run -m unittest discover
+    - coverage report
+    - coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
 
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:
@@ -60,5 +97,5 @@ sphinx_doc:
     - sphinx-doc
   stage: doc
   script:
-    - poetry install -n --extras "mysql elasticsearch apispec kfserving_helpers"
+    - poetry install -n -v
     - sphinx-build -b html docs .sphinx_build
