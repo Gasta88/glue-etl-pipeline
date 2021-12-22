@@ -74,31 +74,20 @@ resource "aws_s3_bucket_policy" "dvault-bucket-policy" {
 }
 
 resource "aws_s3_bucket_object" "scripts-folder" {
-  for_each = fileset("../../shape_dvaults_etl/glue_workflow_jobs", "*.py")
+  for_each = fileset("../shape_dvaults_etl/glue_workflow_jobs", "*.py")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
   acl      = "private"
   key      = "scripts/${each.value}"
-  source   = "../../shape_dvaults_etl/glue_workflow_jobs/${each.value}"
-  etag     = filemd5("../../shape_dvaults_etl/glue_workflow_jobs/${each.value}")
+  source   = "../shape_dvaults_etl/glue_workflow_jobs/${each.value}"
+  etag     = filemd5("../shape_dvaults_etl/glue_workflow_jobs/${each.value}")
 }
 
-resource "aws_s3_bucket_object" "data-profiler-folder" {
+resource "aws_s3_bucket_object" "data-profiler-logs-folder" {
   bucket = aws_s3_bucket.dvault-bucket.bucket
   acl    = "private"
-  key    = "data-profile/"
+  key    = "data-profile-logs/"
 }
 
-# resource "aws_s3_bucket_object" "log-folder" {
-#   bucket = aws_s3_bucket.dvault-bucket.bucket
-#   acl    = "private"
-#   key    = "logs/"
-# }
-
-# resource "aws_s3_bucket_object" "athena-results-folder" {
-#   bucket = aws_s3_bucket.dvault-bucket.bucket
-#   acl    = "private"
-#   key    = "athena-results/"
-# }
 
 #--------------------------- EventBridge and Cloudtrail
 resource "aws_cloudtrail" "dvault-trail" {
@@ -106,15 +95,6 @@ resource "aws_cloudtrail" "dvault-trail" {
   s3_bucket_name                = aws_s3_bucket.dvault-bucket.bucket
   s3_key_prefix                 = "cloudtrail"
   include_global_service_events = false
-  # event_selector {
-  #   read_write_type           = "WriteOnly"
-  #   include_management_events = false
-
-  #   data_resource {
-  #     type   = "AWS::S3::Object"
-  #     values = ["${aws_s3_bucket.dvault-bucket.arn}/data/raw/"]
-  #   }
-  # }
   advanced_event_selector {
     name = "s3-event-trail-dvault-${terraform.workspace}"
 
@@ -394,7 +374,7 @@ resource "aws_glue_job" "flat-dvault-job" {
   command {
     name            = "pythonshell"
     python_version  = 3
-    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/01_flat_dvaults.py"
+    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/flat_dvaults.py"
   }
 
   default_arguments = {
@@ -482,7 +462,7 @@ resource "aws_glue_job" "convert-to-parquet-job" {
   command {
     name            = "glueetl"
     python_version  = 3
-    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/02_convert_to_parquet.py"
+    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/convert_to_parquet.py"
   }
   default_arguments = {
     "--job-bookmark-option" : "job-bookmark-enable",
@@ -612,18 +592,3 @@ resource "aws_glue_job" "post-job" {
     max_concurrent_runs = 25
   }
 }
-
-# resource "aws_glue_catalog_table" "aws-glue-catalog-table" {
-#   name          = "dvault_parquet_${terraform.workspace}"
-#   database_name = aws_glue_catalog_database.aws-glue-catalog-database.name
-#   table_type    = "EXTERNAL_TABLE"
-#   storage_descriptor {
-#     location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data-catalog/"
-#   }
-# }
-
-# resource "aws_athena_database" "dvault-athena-database" {
-#   name          = "dvault_athena_shape_${terraform.workspace}"
-#   bucket        = "${aws_s3_bucket.dvault-bucket.bucket}/athena-results/"
-#   force_destroy = true
-# }
