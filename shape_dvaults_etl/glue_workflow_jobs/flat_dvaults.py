@@ -115,12 +115,12 @@ def split_files(tmp_filename):
             # flat_el = flatten_data(json.loads(el))
             # TODO: keep structure intact, explode them once DS will tell you what to expose
             flat_el = json.loads(el)
-            if flat_el["detail-type"] == "DVaultPredictionEvent":
+            if flat_el["detail"]["type"] == "DVaultPredictionEvent":
                 # predictions_arr[flat_el["detail_prediction_service"]].append(flat_el)
                 predictions_arr[flat_el["detail"]["prediction"]["service"]].append(
                     flat_el
                 )
-            elif flat_el["detail-type"] == "DVaultEvaluationEvent":
+            elif flat_el["detail"]["type"] == "DVaultEvaluationEvent":
                 # service_name = flat_el["detail_evaluation_prediction_id"].split("#")[-1]
                 service_name = flat_el["detail"]["evaluation"]["prediction_id"].split(
                     "#"
@@ -128,7 +128,7 @@ def split_files(tmp_filename):
                 new_flat_el = _replace_image_uri(flat_el, service_name)
                 events_arr[service_name].append(new_flat_el)
             else:
-                e = f'Unrecognized event type inside file: {flat_el["detail-type"]}'
+                e = f'Unrecognized event type inside file: {flat_el["detail"]["type"]}'
                 logger.error(e)
                 sys.exit(0)
         except Exception as e:
@@ -150,7 +150,7 @@ def save_flat_json(el_dict, el_type):
         if len(elements) > 0:
             tmp_key = f"/tmp/{file_name}_{service_name.upper()}.jsonl"
             output_key = (
-                f"data/flat_json/{el_type}/{file_name}_{service_name.upper()}.jsonl"
+                f"data/clean_dvaults/{el_type}/{file_name}_{service_name.upper()}.jsonl"
             )
             obj = s3.Object(LANDING_BUCKETNAME, output_key)
             with open(tmp_key, "wb") as outfile:

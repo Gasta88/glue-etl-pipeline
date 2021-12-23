@@ -325,6 +325,68 @@ resource "aws_glue_job" "pre-job" {
     max_concurrent_runs = 25
   }
 }
+resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
+  name          = "profile-dvault-pass-trigger-${terraform.workspace}"
+  type          = "CONDITIONAL"
+  workflow_name = aws_glue_workflow.dvault-glue-workflow.name
+
+  actions {
+    job_name = aws_glue_job.profile-dvault-job.name
+  }
+  predicate {
+    conditions {
+      job_name = aws_glue_job.pre-job.name
+      state    = "SUCCEEDED"
+    }
+  }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
+}
+
+resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
+  name          = "profile-dvault-fail-trigger-${terraform.workspace}"
+  type          = "CONDITIONAL"
+  workflow_name = aws_glue_workflow.dvault-glue-workflow.name
+
+  actions {
+    job_name = aws_glue_job.clean-up-job.name
+  }
+  predicate {
+    conditions {
+      job_name = aws_glue_job.pre-job.name
+      state    = "FAILED"
+    }
+  }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
+}
+
+resource "aws_glue_job" "profile-dvault-job" {
+  name         = "profile-dvault-job-${terraform.workspace}"
+  description  = "Glue job that profiles dvault files and split them in CLEAN and DIRTY."
+  glue_version = "1.0"
+  role_arn     = aws_iam_role.glue-role.arn
+  max_capacity = 0.0625
+
+  command {
+    name            = "pythonshell"
+    python_version  = 3
+    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/data_profiling.py"
+  }
+
+  default_arguments = {
+    "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
+  }
+  execution_property {
+    max_concurrent_runs = 25
+  }
+}
 
 resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
   name          = "flat-dvault-pass-trigger-${terraform.workspace}"
@@ -336,7 +398,7 @@ resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
   }
   predicate {
     conditions {
-      job_name = aws_glue_job.pre-job.name
+      job_name = aws_glue_job.profile-dvault-job.name
       state    = "SUCCEEDED"
     }
   }
@@ -355,7 +417,7 @@ resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
   }
   predicate {
     conditions {
-      job_name = aws_glue_job.pre-job.name
+      job_name = aws_glue_job.profile-dvault-job.name
       state    = "FAILED"
     }
   }
