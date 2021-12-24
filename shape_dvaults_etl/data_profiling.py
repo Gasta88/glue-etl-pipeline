@@ -138,6 +138,7 @@ try:
                 )[-1]
         else:
             service_name = event["detail"]["prediction"]["service"]
+        clean_dvaults.append(json.dumps(event))
         # TODO: define profiling strategy here
         # suite = get_expectation_suite(event, service_name, dvault_type)
         # if suite:
@@ -155,4 +156,4 @@ except Exception as e:
     )
     sys.exit(0)
 save_dvaults(clean_dvaults, "clean")
-save_dvaults(dirty_dvaults, "dirty")
+# save_dvaults(dirty_dvaults, "dirty")

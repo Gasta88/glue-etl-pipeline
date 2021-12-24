@@ -2,7 +2,7 @@ from awsglue.context import GlueContext
 from pyspark.context import SparkContext
 import unittest
 import warnings
-from shape_dvaults_etl.glue_workflow_jobs.convert_to_parquet import create_parquet
+from shape_dvaults_etl.convert_to_parquet import create_parquet
 import os
 import shutil
 

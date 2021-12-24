@@ -1,7 +1,7 @@
 import boto3
 import unittest
 import warnings
-from shape_dvaults_etl.glue_workflow_jobs.flat_dvaults import split_files
+from shape_dvaults_etl.flat_dvaults import split_files
 import os
 
 TEST_DATA_DIR = "test/data/flat_dvaults"

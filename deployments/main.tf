@@ -38,6 +38,8 @@ resource "aws_s3_bucket" "dvault-bucket" {
   }
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_s3_bucket_policy" "dvault-bucket-policy" {
   bucket = aws_s3_bucket.dvault-bucket.id
 
@@ -62,10 +64,11 @@ resource "aws_s3_bucket_policy" "dvault-bucket-policy" {
           "Service" : "cloudtrail.amazonaws.com"
         },
         "Action" : "s3:PutObject",
-        "Resource" : "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/cloudtrail/*",
+        "Resource" : "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/cloudtrail/AWSLogs/${data.aws_caller_identity.current.account_id}/*",
         "Condition" : {
           "StringEquals" : {
-            "s3:x-amz-acl" : "bucket-owner-full-control"
+            "s3:x-amz-acl" : "bucket-owner-full-control",
+            "aws:SourceArn" : "arn:aws:cloudtrail:us-east-1:${data.aws_caller_identity.current.account_id}:trail/${aws_cloudtrail.dvault-trail.name}"
           }
         }
       }
@@ -74,12 +77,12 @@ resource "aws_s3_bucket_policy" "dvault-bucket-policy" {
 }
 
 resource "aws_s3_bucket_object" "scripts-folder" {
-  for_each = fileset("../shape_dvaults_etl/glue_workflow_jobs", "*.py")
+  for_each = fileset("../shape_dvaults_etl", "*.py")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
   acl      = "private"
   key      = "scripts/${each.value}"
-  source   = "../shape_dvaults_etl/glue_workflow_jobs/${each.value}"
-  etag     = filemd5("../shape_dvaults_etl/glue_workflow_jobs/${each.value}")
+  source   = "../shape_dvaults_etl/${each.value}"
+  etag     = filemd5("../shape_dvaults_etl/${each.value}")
 }
 
 resource "aws_s3_bucket_object" "data-profiler-logs-folder" {
@@ -95,38 +98,16 @@ resource "aws_cloudtrail" "dvault-trail" {
   s3_bucket_name                = aws_s3_bucket.dvault-bucket.bucket
   s3_key_prefix                 = "cloudtrail"
   include_global_service_events = false
-  advanced_event_selector {
-    name = "s3-event-trail-dvault-${terraform.workspace}"
+  event_selector {
+    read_write_type           = "WriteOnly"
+    include_management_events = false
 
-    field_selector {
-      field  = "eventCategory"
-      equals = ["Data"]
-    }
+    data_resource {
+      type = "AWS::S3::Object"
 
-    field_selector {
-      field = "eventName"
-
-      equals = ["PutObject", "CopyObject"
-      ]
-    }
-
-    field_selector {
-      field = "resources.ARN"
-
-      #The trailing slash is intentional; do not exclude it.
-      equals = [
-        "${aws_s3_bucket.dvault-bucket.arn}/data/raw/"
-      ]
-    }
-
-    field_selector {
-      field  = "readOnly"
-      equals = ["false"]
-    }
-
-    field_selector {
-      field  = "resources.type"
-      equals = ["AWS::S3::Object"]
+      # Make sure to append a trailing '/' to your ARN if you want
+      # to monitor all objects in a bucket.
+      values = ["${aws_s3_bucket.dvault-bucket.arn}/data/raw/"]
     }
   }
 }
@@ -287,16 +268,6 @@ resource "aws_glue_trigger" "prejob-trigger" {
   }
   depends_on = [
     aws_glue_workflow.dvault-glue-workflow
-  ]
-}
-
-# add EventBatchingCondition because there is no dedicated attribute in Terraform
-resource "null_resource" "update-pre-job-trigger" {
-  provisioner "local-exec" {
-    command = "aws glue update-trigger --name dvault-pre-job-trigger-${terraform.workspace} --trigger-update '{\"Actions\":[{\"JobName\":\"dvault-pre-job-${terraform.workspace}\",\"Arguments\":{}}],\"EventBatchingCondition\":{\"BatchSize\":1,\"BatchWindow\":450}}'"
-  }
-  depends_on = [
-    aws_glue_trigger.prejob-trigger, aws_glue_workflow.dvault-glue-workflow
   ]
 }
 
