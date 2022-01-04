@@ -61,13 +61,67 @@ ALL_MEDIAS = [obj.key for obj in list(media_bucket.objects.all())]
 #     return out
 
 
-def _replace_image_uri(el, service_name):
+def _recast_score_to_float(el, service_name):
     """
-    Replace media_id attribute for STE EVENTS only tot he S3 URI.
+    Cast score attribute as FLOAT because missing scores are labelled as INT64 (-1).
+
+    :param el: dictionary that represent the event.
+    :param service_name: element service name (only SUMMARIZER is accepted).
+    """
+    if service_name == "summarizer":
+        for i, sentence_score in enumerate(
+            el["detail"]["prediction"]["input"]["sentences_scores"]
+        ):
+            if type(sentence_score["score"]) is int:
+                el["detail"]["prediction"]["input"]["sentences_scores"][i][
+                    "score"
+                ] = float(sentence_score["score"])
+    return el
+
+
+def _recast_paragraph_to_str(el, service_name):
+    """
+    Cast to STRING the paragraph attribute in SUMMARIZER EVENTS from INT64.
+    This is due to the presence of "null" values that account for STRING data type event
+    if the majority of the values are numeric.
+
+    :param el: dictionary that represent the event.
+    :param service_name: element service name (only SUMMARIZER is accepted).
+    """
+    if service_name == "summarizer":
+        paragraph = el["detail"]["evaluation"]["payload"].get("paragraph", None)
+        if type(paragraph) is int:
+            el["detail"]["evaluation"]["payload"]["paragraph"] = str(paragraph)
+    return el
+
+
+def _convert_query_and_tags(el, service_name):
+    """
+    Convert query and tags attribute in STE EVENTS from string to list for all types.
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only STE is accepted).
-    :return new_el: modified version of the STE EVENT element.
+    """
+    if service_name == "ste":
+        query = el["detail"]["evaluation"]["payload"].get("query", None)
+        if type(query) is str:
+            el["detail"]["evaluation"]["payload"]["query"] = [query]
+        tags = el["detail"]["evaluation"]["payload"].get("tags", None)
+        if type(tags) is str:
+            if tags == "null":
+                # tags can be nullable
+                el["detail"]["evaluation"]["payload"]["tags"] = []
+            else:
+                el["detail"]["evaluation"]["payload"]["tags"] = [tags]
+    return el
+
+
+def _replace_image_uri(el, service_name):
+    """
+    Replace media_id attribute for STE EVENTS only to the S3 URI.
+
+    :param el: dictionary that represent the event.
+    :param service_name: element service name (only STE is accepted).
     """
     if service_name == "ste":
         media_id_value = el["detail"]["evaluation"]["payload"]["media_id"]
@@ -125,8 +179,11 @@ def split_files(tmp_filename):
                 service_name = flat_el["detail"]["evaluation"]["prediction_id"].split(
                     "#"
                 )[-1]
-                new_flat_el = _replace_image_uri(flat_el, service_name)
-                events_arr[service_name].append(new_flat_el)
+                flat_el = _replace_image_uri(flat_el, service_name)
+                flat_el = _convert_query_and_tags(flat_el, service_name)
+                flat_el = _recast_paragraph_to_str(flat_el, service_name)
+                flat_el = _recast_score_to_float(flat_el, service_name)
+                events_arr[service_name].append(flat_el)
             else:
                 e = f'Unrecognized event type inside file: {flat_el["detail"]["type"]}'
                 logger.error(e)
