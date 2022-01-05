@@ -31,10 +31,13 @@ run_properties = glue.get_workflow_run_properties(
 
 run_properties["run_state"] = state_to_set
 if state_to_set == "STARTED":
-    event_id = run_properties["aws:eventIds"][0]
-    logger.info(f"Workflow started by event: {event_id}")
-    # TODO: extract object key from EventBridge event and store it into the run_properties
-    # dictionary
+    s3 = boto3.resource("s3", region_name="us-east-1")
+    landing_bucket = s3.Bucket(run_properties["landing_bucketname"])
+    dvault_files = [
+        obj.key for obj in list(landing_bucket.objects.filter(Prefix="data/raw"))
+    ]
+    # arbitrary process 50 dvault files at time
+    run_properties["dvault_files"] = ";".join(dvault_files[:50])
 
 logger.info("Set new set of run_properties")
 glue.put_workflow_run_properties(

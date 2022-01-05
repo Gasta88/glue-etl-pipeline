@@ -28,13 +28,13 @@ run_properties = glue.get_workflow_run_properties(
 
 # Job parameters
 LANDING_BUCKETNAME = run_properties["landing_bucketname"]
-OBJ_KEY = run_properties["dvault_filename"]
 s3 = boto3.resource("s3", region_name="us-east-1")
 BUCKET = s3.Bucket(LANDING_BUCKETNAME)
 DVAULT_PREFIX = {
-    "dirty": f"{LANDING_BUCKETNAME}/data/dirty_dvaults",
-    "clean": f"{LANDING_BUCKETNAME}/data/clean_dvaults",
+    "dirty": "data/dirty_dvaults",
+    "clean": "data/clean_dvaults",
 }
+DVAULT_FILES = run_properties["dvault_files"].split(";")
 
 
 def flatten_data(y):
@@ -89,21 +89,21 @@ def split_files(tmp_filename):
     return data_arr
 
 
-def save_dvaults(el_list, el_type):
+def save_dvaults(el_list, el_type, file_name):
     """
     Save onto the correct prefix the dvault profiled.
 
     :param el_list: list of dvaults profiled.
     :param el_type: either dirty or clean dvaults.
+    :param file_name: name of the dvault file.
     """
-    file_name = OBJ_KEY.split("/")[-1]
     if len(el_list) > 0:
         logger.info(f"There are {len(el_list)} {el_type.upper()} elements.")
         tmp_key = f"/tmp/{file_name}_{el_type.upper()}"
         output_key = f"{DVAULT_PREFIX.get(el_type)}/{file_name}_{el_type.upper()}"
         obj = s3.Object(LANDING_BUCKETNAME, output_key)
         with open(tmp_key, "wb") as outfile:
-            outfile.write("".join(el_list))
+            outfile.write("".join(el_list).encode())
         obj.put(Body=open(tmp_key, "rb"))
     else:
         logger.warn(f"No {el_type.upper()} extracted from file.")
@@ -111,49 +111,58 @@ def save_dvaults(el_list, el_type):
 
 
 # Main instructions for the Glue Job
-logger.info(f"Profiling file {OBJ_KEY}.")
-file_name = OBJ_KEY.split("/")[-1]
-tmp_filename = "/tmp/tmp_file"
-obj = BUCKET.Object(OBJ_KEY)
-obj.download_file(tmp_filename)
+for obj_key in DVAULT_FILES:
+    logger.info(f"Profiling file {obj_key}.")
+    file_name = obj_key.split("/")[-1]
+    tmp_filename = "/tmp/tmp_file"
+    obj = BUCKET.Object(obj_key)
+    obj.download_file(tmp_filename)
 
-try:
-    events_arr = split_files(tmp_filename)
-    dirty_dvaults = []
-    clean_dvaults = []
-    for p, event in enumerate(events_arr):
-        dvault_type = (
-            "event"
-            if event["detail"]["type"] == "DVaultEvaluationEvent"
-            else "prediction"
-        )
-        if dvault_type == "event":
-            if (event["detail"]["evaluation"]["prediction_id"] is None) or (
-                "#" in event["detail"]["evaluation"]["prediction_id"]
-            ):
-                service_name = "na"
+    try:
+        events_arr = split_files(tmp_filename)
+        dirty_dvaults = []
+        clean_dvaults = []
+        for p, event in enumerate(events_arr):
+            dvault_type = (
+                "event"
+                if event["detail"]["type"] == "DVaultEvaluationEvent"
+                else "prediction"
+            )
+            if dvault_type == "event":
+                # new feature added to EVENT dvault files
+                service_name = event["detail"]["evaluation"].get("service", None)
+                if service_name is None:
+                    # old style EVENT dvault files
+                    if (event["detail"]["evaluation"]["prediction_id"] is None) or (
+                        "#" not in event["detail"]["evaluation"]["prediction_id"]
+                    ):
+                        # if dvault file does not have a reference to the service, then it can't be processed
+                        service_name = "na"
+                    else:
+                        service_name = event["detail"]["evaluation"][
+                            "prediction_id"
+                        ].split("#")[-1]
             else:
-                service_name = event["detail"]["evaluation"]["prediction_id"].split(
-                    "#"
-                )[-1]
-        else:
-            service_name = event["detail"]["prediction"]["service"]
-        clean_dvaults.append(json.dumps(event))
-        # TODO: define profiling strategy here
-        # suite = get_expectation_suite(event, service_name, dvault_type)
-        # if suite:
-        #     failures =[k for k,v in suite.items() if not(v.success)]
-        #     if len(failures) > 0:
-        #         for f in failures:
-        #             print(f'Event {event["detail"]["id"]} at position {p} failed check "{f}"')
-        #         dirty_dvaults.append(json.dumps(event))
-        # else:
-        #     dirty_dvaults.append(json.dumps(event))
-        # clean_dvaults.append(json.dumps(event))
-except Exception as e:
-    logger.error(
-        "Something wrong with extraction of dvaults from file. Process stopped."
-    )
-    sys.exit(0)
-save_dvaults(clean_dvaults, "clean")
-# save_dvaults(dirty_dvaults, "dirty")
+                service_name = event["detail"]["prediction"]["service"]
+            if service_name == "na":
+                dirty_dvaults.append(json.dumps(event))
+            else:
+                clean_dvaults.append(json.dumps(event))
+            # TODO: define profiling strategy here
+            # suite = get_expectation_suite(event, service_name, dvault_type)
+            # if suite:
+            #     failures =[k for k,v in suite.items() if not(v.success)]
+            #     if len(failures) > 0:
+            #         for f in failures:
+            #             print(f'Event {event["detail"]["id"]} at position {p} failed check "{f}"')
+            #         dirty_dvaults.append(json.dumps(event))
+            # else:
+            #     dirty_dvaults.append(json.dumps(event))
+            # clean_dvaults.append(json.dumps(event))
+    except Exception as e:
+        logger.error(
+            "Something wrong with extraction of dvaults from file. Process stopped."
+        )
+        sys.exit(0)
+    save_dvaults(clean_dvaults, "clean", file_name)
+    save_dvaults(dirty_dvaults, "dirty", file_name)

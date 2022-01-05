@@ -28,14 +28,9 @@ job.init(args["JOB_NAME"], args)
 
 # Job parameters
 output_path = f's3a://{run_properties["landing_bucketname"]}/data/clean_parquet'
-file_name = run_properties["dvault_filename"].split("/")[-1]
 s3 = boto3.resource("s3", region_name="us-east-1")
 bucket = s3.Bucket(run_properties["landing_bucketname"])
-ALL_JSONS = [
-    obj.key
-    for obj in list(bucket.objects.all())
-    if ("flat_json" in obj.key) and (file_name in obj.key)
-]
+ALL_JSONS = [obj.key for obj in list(bucket.objects.filter(Prefix="data/flat_jsons"))]
 table_names = [
     "HEADLINE_PRED",
     "HEADLINE_EVENT",
@@ -58,7 +53,9 @@ def create_parquet(spark, table_name, dest_filename):
     table_type = table_name.split("_")[1]
     logger.info(f"Processing {table_type} for service {service_name}.")
     file_names = [
-        f for f in ALL_JSONS if ((service_name in f) and (table_type.lower() in f))
+        f's3://{run_properties["landing_bucketname"]}/{f}'
+        for f in ALL_JSONS
+        if ((service_name in f) and (table_type.lower() in f))
     ]
     if file_names is not []:
         logger.info(f'Converting: {"; ".join(file_names)}')

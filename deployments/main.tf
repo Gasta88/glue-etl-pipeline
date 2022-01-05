@@ -38,44 +38,6 @@ resource "aws_s3_bucket" "dvault-bucket" {
   }
 }
 
-data "aws_caller_identity" "current" {}
-
-resource "aws_s3_bucket_policy" "dvault-bucket-policy" {
-  bucket = aws_s3_bucket.dvault-bucket.id
-
-  # Terraform's "jsonencode" function converts a
-  # Terraform expression's result to valid JSON syntax.
-  policy = jsonencode({
-    "Version" : "2012-10-17",
-    "Statement" : [
-      {
-        "Sid" : "AWSCloudTrailAclCheck",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "cloudtrail.amazonaws.com"
-        },
-        "Action" : "s3:GetBucketAcl",
-        "Resource" : "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}"
-      },
-      {
-        "Sid" : "AWSCloudTrailWrite",
-        "Effect" : "Allow",
-        "Principal" : {
-          "Service" : "cloudtrail.amazonaws.com"
-        },
-        "Action" : "s3:PutObject",
-        "Resource" : "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/cloudtrail/AWSLogs/${data.aws_caller_identity.current.account_id}/*",
-        "Condition" : {
-          "StringEquals" : {
-            "s3:x-amz-acl" : "bucket-owner-full-control",
-            "aws:SourceArn" : "arn:aws:cloudtrail:us-east-1:${data.aws_caller_identity.current.account_id}:trail/${aws_cloudtrail.dvault-trail.name}"
-          }
-        }
-      }
-    ]
-  })
-}
-
 resource "aws_s3_bucket_object" "scripts-folder" {
   for_each = fileset("../shape_dvaults_etl", "*.py")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
@@ -90,96 +52,6 @@ resource "aws_s3_bucket_object" "data-profiler-logs-folder" {
   acl    = "private"
   key    = "data-profile-logs/"
 }
-
-
-#--------------------------- EventBridge and Cloudtrail
-resource "aws_cloudtrail" "dvault-trail" {
-  name                          = "s3-event-trail-dvault-${terraform.workspace}"
-  s3_bucket_name                = aws_s3_bucket.dvault-bucket.bucket
-  s3_key_prefix                 = "cloudtrail"
-  include_global_service_events = false
-  event_selector {
-    read_write_type           = "WriteOnly"
-    include_management_events = false
-
-    data_resource {
-      type = "AWS::S3::Object"
-
-      # Make sure to append a trailing '/' to your ARN if you want
-      # to monitor all objects in a bucket.
-      values = ["${aws_s3_bucket.dvault-bucket.arn}/data/raw/"]
-    }
-  }
-}
-
-resource "aws_cloudwatch_event_rule" "glue-dvault-send-rule" {
-  name = "s3-dvault-upload-trigger-rule-${terraform.workspace}"
-  event_pattern = jsonencode({
-    "detail-type" : ["AWS API Call via CloudTrail"],
-    "source" : ["aws.s3"],
-    "detail" : {
-      "eventSource" : ["s3.amazonaws.com"],
-      "requestParameters" : {
-        "bucketName" : [aws_s3_bucket.dvault-bucket.bucket],
-        "key" : [{
-          "prefix" : "data/raw/"
-        }]
-      },
-      "eventName" : ["PutObject", "CopyObject"]
-    }
-  })
-}
-
-resource "aws_iam_role" "glue-dvault-event-target-rule-role" {
-  name               = "glue-dvault-event-target-rule-role-${terraform.workspace}"
-  assume_role_policy = <<EOF
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Action": "sts:AssumeRole",
-      "Principal": {
-        "Service": "events.amazonaws.com"
-      },
-      "Effect": "Allow",
-      "Sid": ""
-    }
-  ]
-}
-EOF
-}
-
-resource "aws_iam_policy" "glue-dvault-event-target-rule-policy" {
-  name        = "glue-dvault-event-target-rule-policy-${terraform.workspace}"
-  description = "glue dvault event target rule policy"
-  policy      = <<EOF
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "glue:notifyEvent"],
-            "Resource": [
-                "${aws_glue_workflow.dvault-glue-workflow.arn}"
-            ]
-        }
-    ]
-}
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "attach-dvault-event-target-role-policy" {
-  role       = aws_iam_role.glue-dvault-event-target-rule-role.name
-  policy_arn = aws_iam_policy.glue-dvault-event-target-rule-policy.arn
-}
-
-resource "aws_cloudwatch_event_target" "dvault-event-target" {
-  arn      = aws_glue_workflow.dvault-glue-workflow.arn #Target resource arn
-  rule     = aws_cloudwatch_event_rule.glue-dvault-send-rule.name
-  role_arn = aws_iam_role.glue-dvault-event-target-rule-role.arn
-}
-
 
 #--------------------------- AWS Glue resources
 
@@ -249,18 +121,17 @@ resource "aws_cloudwatch_log_group" "dvault-glue-log-group" {
 }
 
 resource "aws_glue_workflow" "dvault-glue-workflow" {
-  name        = "s3-event-glue-dvault-workflow-${terraform.workspace}"
-  description = "Glue workflow triggered by S3 PutObject Event"
+  name        = "s3-batch-glue-dvault-workflow-${terraform.workspace}"
+  description = "Glue workflow triggered by schedule or on-demand"
   default_run_properties = {
     "landing_bucketname" : aws_s3_bucket.dvault-bucket.bucket,
-    "media_bucketname" : "shape-media-library-staging",
-    "dvault_filename" : "?????"
+    "media_bucketname" : "shape-media-library-staging"
   }
 }
 
 resource "aws_glue_trigger" "prejob-trigger" {
   name          = "dvault-pre-job-trigger-${terraform.workspace}"
-  type          = "EVENT"
+  type          = "ON_DEMAND"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
   enabled       = false
   actions {
@@ -292,9 +163,7 @@ resource "aws_glue_job" "pre-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  execution_property {
-    max_concurrent_runs = 25
-  }
+  timeout = 15
 }
 resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
   name          = "profile-dvault-pass-trigger-${terraform.workspace}"
@@ -354,9 +223,7 @@ resource "aws_glue_job" "profile-dvault-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  execution_property {
-    max_concurrent_runs = 25
-  }
+  timeout = 15
 }
 
 resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
@@ -417,9 +284,7 @@ resource "aws_glue_job" "flat-dvault-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  execution_property {
-    max_concurrent_runs = 25
-  }
+  timeout = 15
 }
 
 resource "aws_glue_job" "clean-up-job" {
@@ -442,9 +307,7 @@ resource "aws_glue_job" "clean-up-job" {
     "--enable-metrics"                   = ""
 
   }
-  execution_property {
-    max_concurrent_runs = 25
-  }
+  timeout = 15
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
@@ -505,9 +368,7 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  execution_property {
-    max_concurrent_runs = 25
-  }
+  timeout = 15
 }
 
 resource "aws_glue_trigger" "dvault-parquet-crawler-pass-trigger" {
@@ -553,10 +414,9 @@ resource "aws_glue_crawler" "dvault-parquet-crawler" {
   name          = "parquet-clean-crawler-${terraform.workspace}"
   description   = "Crawler for Parquet cleaned and profiled"
   role          = aws_iam_role.glue-role.arn
-  table_prefix  = "dvault_glue_${terraform.workspace}_"
 
   s3_target {
-    path       = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data/clean-parquet/"
+    path       = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data/clean_parquet/"
     exclusions = ["**_SUCCESS", "**crc", "**csv", "**metadata"]
   }
 }
@@ -621,7 +481,6 @@ resource "aws_glue_job" "post-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  execution_property {
-    max_concurrent_runs = 25
-  }
+  timeout = 15
 }
+

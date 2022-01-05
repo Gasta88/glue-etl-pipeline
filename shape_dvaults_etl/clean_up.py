@@ -22,23 +22,19 @@ run_properties = glue.get_workflow_run_properties(
 )["RunProperties"]
 
 bucket_name = run_properties["landing_bucketname"]
-prefixes_to_cleanup = ["data/raw/", "data/flat_json"]
-file_name = run_properties["dvault_filename"].split("/")[-1]
+prefixes_to_cleanup = ["data/raw/", "data/flat_jsons"]
+DVAULT_FILES = run_properties["dvault_files"].split(";")
 
 s3 = boto3.resource("s3", region_name="us-east-1")
 bucket = s3.Bucket(bucket_name)
-keys_to_remove = []
 
 logger.info("Starting environment clean-up.")
-for prefix in prefixes_to_cleanup:
-    tmp_arr = [
-        obj.key
-        for obj in list(bucket.objects.all())
-        if (prefix in obj.key) and (file_name in obj.key)
-    ]
-    keys_to_remove += tmp_arr
+# for key in DVAULT_FILES:
+#     s3.Object(bucket_name, key).delete()
+# logger.info("data/raw/ prefix clean-up is complete.")
 
-for key in keys_to_remove:
-    s3.Object(bucket_name, key).delete()
+# for key in [obj.key for obj in list(bucket.objects.filter(Prefix="data/flat_jsons"))]:
+#     s3.Object(bucket_name, key).delete()
+# logger.info("data/flat_jsons/ prefix clean-up is complete.")
 
 logger.info("Finishing environment clean-up.")
