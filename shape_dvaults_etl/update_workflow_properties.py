@@ -36,8 +36,12 @@ if state_to_set == "STARTED":
     dvault_files = [
         obj.key for obj in list(landing_bucket.objects.filter(Prefix="data/raw"))
     ]
-    # arbitrary process 50 dvault files at time
-    run_properties["dvault_files"] = ";".join(dvault_files[:50])
+    # If no new dvaults are to be processed, do not start the workflow.
+    if len(dvault_files) == 0:
+        response = glue.stop_workflow_run(Name=workflow_name, RunId=workflow_run_id)
+    else:
+        # arbitrary process 50 dvault files at time
+        run_properties["dvault_files"] = ";".join(dvault_files[:50])
 
 logger.info("Set new set of run_properties")
 glue.put_workflow_run_properties(

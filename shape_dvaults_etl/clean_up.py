@@ -29,12 +29,12 @@ s3 = boto3.resource("s3", region_name="us-east-1")
 bucket = s3.Bucket(bucket_name)
 
 logger.info("Starting environment clean-up.")
-# for key in DVAULT_FILES:
-#     s3.Object(bucket_name, key).delete()
-# logger.info("data/raw/ prefix clean-up is complete.")
+for key in DVAULT_FILES:
+    s3.Object(bucket_name, key).delete()
+logger.info("data/raw/ prefix clean-up is complete.")
 
-# for key in [obj.key for obj in list(bucket.objects.filter(Prefix="data/flat_jsons"))]:
-#     s3.Object(bucket_name, key).delete()
-# logger.info("data/flat_jsons/ prefix clean-up is complete.")
+for key in [obj.key for obj in list(bucket.objects.filter(Prefix="data/flat_jsons"))]:
+    s3.Object(bucket_name, key).delete()
+logger.info("data/flat_jsons/ prefix clean-up is complete.")
 
 logger.info("Finishing environment clean-up.")
