@@ -44,3 +44,8 @@ class ConvertToParquetTestCase(unittest.TestCase):
             df = self.spark.read.parquet(parquet_filename)
             self.assertTrue(len(df.columns) > 0)
             self.asserTrue(df.count() > 0)
+
+
+if __name__ == "__main__":
+    runner = unittest.TextTestRunner(verbosity=3)
+    unittest.main(testRunner=runner)

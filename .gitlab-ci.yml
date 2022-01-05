@@ -42,6 +42,7 @@ pylint:
     - git submodule add ../../ai/python-code-check.git
     - poetry install -n -v
     - poetry run pylint shape_dvaults_etl --rcfile=python-code-check/pylint.ini --fail-under=8
+
 # check terraform file quality
 terraform:
   only:
@@ -68,9 +69,9 @@ terraform_unit_test:
     - cd deployments
     - terraform workspace new testing
     - terraform plan -out=plan.out
-    - terraform show -json > plan.json
-    - cd ..
-    -  #TODO: create unittest to inspect terraform plan json file
+    - terraform show -json plan.out > plan.json
+    - cd ../test
+    - python -m unittest check_terraform_plan.py
 
 # run python unit tests
 python_unit_test:

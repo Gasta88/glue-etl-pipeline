@@ -40,3 +40,8 @@ class FlatDvaultTestCase(unittest.TestCase):
         # events checks
         for service_name in events:
             self.assertTrue(len(events[service_name]) > 0)
+
+
+if __name__ == "__main__":
+    runner = unittest.TextTestRunner(verbosity=3)
+    unittest.main(testRunner=runner)
