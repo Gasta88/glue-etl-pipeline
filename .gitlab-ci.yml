@@ -4,12 +4,22 @@ default:
   image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
 
   tags:
-    - ai-dev-multiple-runners
+    - ai-runner-pool
 
 stages:
   - check
   - test
   - doc
+
+variables:
+  DOCKER_DRIVER: "overlay2"
+  DOCKER_TLS_CERTDIR: "/certs"
+  AWS_SDK_LOAD_CONFIG: "false"
+  POETRY_VERSION: "1.1.7"
+  POETRY_HOME: "/opt/.poetry"
+  TERRAFORM_VERSION: "0.14.6"
+  AWS_REGION: "us-east-1"
+  AWS_DEFAULT_REGION: "us-east-1"
 
 # endregion MAIN_SETTINGS
 
