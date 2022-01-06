@@ -26,16 +26,24 @@ run_properties = glue.get_workflow_run_properties(
     Name=workflow_name, RunId=workflow_run_id
 )["RunProperties"]
 
-# Job parameters
-LANDING_BUCKETNAME = run_properties["landing_bucketname"]
-MEDIA_BUCKETNAME = run_properties["media_bucketname"]
-s3 = boto3.resource("s3", region_name="us-east-1")
-BUCKET = s3.Bucket(LANDING_BUCKETNAME)
-media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
-ALL_MEDIAS = [obj.key for obj in list(media_bucket.objects.all())]
-DVAULT_FILES = [
-    obj.key for obj in list(BUCKET.objects.filter(Prefix="data/clean_dvaults"))
-]
+
+def get_run_properties(run_properties):
+    """Return enhanced job properties.
+
+    :param run_properties: collection of stabdard Glue Workflow run properties.
+    :return config: dictionary with properties used in flat_dvaults Glue Job."""
+    config = {}
+    config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
+    config["MEDIA_BUCKETNAME"] = run_properties["media_bucketname"]
+    s3 = boto3.resource("s3", region_name="us-east-1")
+    config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
+    media_bucket = s3.Bucket(config["MEDIA_BUCKETNAME"])
+    config["ALL_MEDIAS"] = [obj.key for obj in list(media_bucket.objects.all())]
+    config["DVAULT_FILES"] = [
+        obj.key
+        for obj in list(config["BUCKET"].objects.filter(Prefix="data/clean_dvaults"))
+    ]
+    return config
 
 
 def _recast_score_to_float(el, service_name):
@@ -64,6 +72,7 @@ def _recast_paragraph_to_str(el, service_name):
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only SUMMARIZER is accepted).
+    :return el: corrected element, if criterias are satisfied.
     """
     if service_name == "summarizer":
         # Skip over DELETE type events since they do not have a payload attribute.
@@ -80,6 +89,7 @@ def _convert_query_and_tags(el, service_name):
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only STE is accepted).
+    :return el: corrected element, if criterias are satisfied.
     """
     if service_name == "ste":
         query = el["detail"]["evaluation"]["payload"].get("query", None)
@@ -99,12 +109,15 @@ def _convert_query_and_tags(el, service_name):
     return el
 
 
-def _replace_image_uri(el, service_name):
+def _replace_image_uri(el, service_name, media_bucketname, all_medias):
     """
     Replace media_id attribute for STE EVENTS only to the S3 URI.
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only STE is accepted).
+    :param media_bucketname: string that define the S3 bucket with Shape media.
+    :param al_medias: list of keys inside the S3 Shape media bucket.
+    :return el: corrected element, if criterias are satisfied.
     """
     if service_name == "ste":
         # Skip over ADD_TAG type events since they do not have a media_id attribute.
@@ -113,8 +126,8 @@ def _replace_image_uri(el, service_name):
             media_lib_value = el["detail"]["evaluation"]["payload"]["medialib"]
             media_lookup_value = f"{media_lib_value}/{media_id_value}"
             media_uri_value = [
-                f"s3://{MEDIA_BUCKETNAME}/{key}"
-                for key in ALL_MEDIAS
+                f"s3://{media_bucketname}/{key}"
+                for key in all_medias
                 if media_lookup_value in key
             ]
             if media_uri_value == []:
@@ -128,7 +141,7 @@ def _replace_image_uri(el, service_name):
     return el
 
 
-def get_service_name(el):
+def _get_service_name(el):
     """
     Retrieve service name from dvault file.
 
@@ -169,19 +182,11 @@ def split_files(tmp_filename):
         if el[-2:] != "}}":
             el = el + "}}"
         try:
-            # flat_el = flatten_data(json.loads(el))
-            # TODO: keep structure intact, explode them once DS will tell you what to expose
             flat_el = json.loads(el)
-            service_name = get_service_name(flat_el)
+            service_name = _get_service_name(flat_el)
             if flat_el["detail"]["type"] == "DVaultPredictionEvent":
-                # predictions_arr[flat_el["detail_prediction_service"]].append(flat_el)
-                flat_el = _recast_score_to_float(flat_el, service_name)
                 predictions_arr[service_name].append(flat_el)
             elif flat_el["detail"]["type"] == "DVaultEvaluationEvent":
-                # service_name = flat_el["detail_evaluation_prediction_id"].split("#")[-1]
-                flat_el = _replace_image_uri(flat_el, service_name)
-                flat_el = _convert_query_and_tags(flat_el, service_name)
-                flat_el = _recast_paragraph_to_str(flat_el, service_name)
                 events_arr[service_name].append(flat_el)
             else:
                 e = f'Unrecognized event type inside file: {flat_el["detail"]["type"]}'
@@ -193,14 +198,16 @@ def split_files(tmp_filename):
     return (predictions_arr, events_arr)
 
 
-def save_flat_json(el_dict, el_type, file_name):
+def save_flat_json(el_dict, el_type, file_name, landing_bucketname):
     """
     Get list of dictionaries and store them to the respective S3 prefix.
 
     :param el_dict: dictionary made of arrays of dictionaries.
     :param el_type: either EVENTS or PREDICTIONS.
     :param file_name: dvault file name.
+    :param landing_bucketname: string that refer t S3 bucket where file is going to be saved.
     """
+    s3 = boto3.resource("s3", region_name="us-east-1")
     for service_name, elements in el_dict.items():
         logger.info(f"There are {len(elements)} items for {service_name}.")
         if len(elements) > 0:
@@ -208,7 +215,7 @@ def save_flat_json(el_dict, el_type, file_name):
             output_key = (
                 f"data/flat_jsons/{el_type}/{file_name}_{service_name.upper()}.jsonl"
             )
-            obj = s3.Object(LANDING_BUCKETNAME, output_key)
+            obj = s3.Object(landing_bucketname, output_key)
             with open(tmp_key, "wb") as outfile:
                 for el in elements:
                     outfile.write(json.dumps(el).encode())
@@ -219,22 +226,64 @@ def save_flat_json(el_dict, el_type, file_name):
     return
 
 
-# Main instructions for the Glue Job
-for obj_key in DVAULT_FILES:
-    logger.info(f"Splitting file {obj_key}.")
-    file_name = obj_key.split("/")[-1]
+def main():
+    """
+    Run main steps in the flat_dvaults Glue Job.
+    """
+    run_props = get_run_properties(run_properties)
     tmp_filename = "/tmp/tmp_file"
-    obj = BUCKET.Object(obj_key)
-    obj.download_file(tmp_filename)
+    for obj_key in run_props["DVAULT_FILES"]:
+        logger.info(f"Splitting file {obj_key}.")
+        file_name = obj_key.split("/")[-1]
+        obj = run_props["BUCKET"].Object(obj_key)
+        obj.download_file(tmp_filename)
 
-    try:
-        predictions_arr, events_arr = split_files(tmp_filename)
-        logger.info(f"Extracted {len(predictions_arr)} prediction elements from file.")
-        logger.info(f"Extracted {len(events_arr)} event elements from file.")
-    except Exception as e:
-        logger.error(
-            "Something wrong with extraction of prediction/event from file. Process stopped."
+        try:
+            predictions_arr, events_arr = split_files(tmp_filename)
+            logger.info(
+                f"Extracted {len(predictions_arr)} prediction elements from file."
+            )
+            logger.info(f"Extracted {len(events_arr)} event elements from file.")
+
+            logger.info("Correcting predictions elements.")
+            corrected_predictions_arr = {}
+            for service_name, elements in predictions_arr.items():
+                corrected_predictions_arr[service_name] = [
+                    _recast_score_to_float(el, service_name) for el in elements
+                ]
+
+            logger.info("Correcting events elements.")
+            corrected_events_arr = {}
+            for service_name, elements in events_arr.items():
+                new_elements = []
+                for el in elements:
+                    new_el_0 = _replace_image_uri(
+                        el,
+                        service_name,
+                        run_props["MEDIA_BUCKETNAME"],
+                        run_props["ALL_MEDIAS"],
+                    )
+                    new_el_1 = _convert_query_and_tags(new_el_0, service_name)
+                    new_el_2 = _recast_paragraph_to_str(new_el_1, service_name)
+                    new_elements.append(new_el_2)
+                corrected_events_arr[service_name] = new_elements
+
+        except Exception as e:
+            logger.error(
+                "Something wrong with extraction of prediction/event from file. Process stopped."
+            )
+            sys.exit(1)
+
+        save_flat_json(
+            corrected_predictions_arr,
+            "predictions",
+            file_name,
+            run_props["LANDING_BUCKETNAME"],
         )
-        sys.exit(1)
-    save_flat_json(predictions_arr, "predictions", file_name)
-    save_flat_json(events_arr, "events", file_name)
+        save_flat_json(
+            corrected_events_arr, "events", file_name, run_props["LANDING_BUCKETNAME"]
+        )
+
+
+if __name__ == "__main__":
+    main()

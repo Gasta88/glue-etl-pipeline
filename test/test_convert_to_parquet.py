@@ -36,7 +36,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
         """Remove test settings."""
         shutil.rmtree(self.dest_folder)
 
-    def test_create_paruet(self):
+    def test_create_parquet(self):
         """Test shape_dvaults_etl.glue_workflow_jobs.convert_to_parquet.create_parquet method."""
         for table_name in self.table_names:
             parquet_filename = f"{self.dest_folder}/{table_name}.parquet"

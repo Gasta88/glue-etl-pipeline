@@ -484,3 +484,21 @@ resource "aws_glue_job" "post-job" {
   timeout = 15
 }
 
+resource "aws_glue_trigger" "cleanupjob-trigger" {
+  name          = "dvault-cleanup-job-trigger-${terraform.workspace}"
+  type          = "CONDITIONAL"
+  workflow_name = aws_glue_workflow.dvault-glue-workflow.name
+
+  actions {
+    job_name = aws_glue_job.clean-up-job.name
+  }
+  predicate {
+    conditions {
+      job_name = aws_glue_job.post-job.name
+      state    = "SUCCEEDED"
+    }
+  }
+  depends_on = [
+    aws_glue_workflow.dvault-glue-workflow
+  ]
+}
