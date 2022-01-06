@@ -58,12 +58,13 @@ terraform:
 
 # run terraform unit tests
 terraform_unit_test:
-  <<: *terraform_install_template
   only:
     - master
     - auto-merge
     - unit-test
   stage: test
+  before_script:
+    - *terraform_install_template
   script:
     - poetry install -n -v
     - cd deployments
