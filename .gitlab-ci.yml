@@ -59,9 +59,12 @@ terraform:
     - master
     - auto-merge
   stage: check
-  image: hashicorp/terraform:light
+  image:
+    name: hashicorp/terraform:light
+    entrypoint: [""]
   script:
     - cd deployments
+    - terraform init
     - terraform workspace new testing
     - terraform fmt -check
     - terraform validate
