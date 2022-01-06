@@ -5,7 +5,7 @@ description = "Shape dvault ETL pipeline"
 authors = ["francesco.gastaldello <francesco.gastaldello@docebo.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.6.2"
 pylint = "^2.12.2"
 Sphinx = "^4.3.2"
 coverage = "^6.2"
