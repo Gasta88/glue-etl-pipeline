@@ -75,7 +75,6 @@ terraform_unit_test:
   before_script:
     - *terraform_install_template
   script:
-    - poetry install -n -v
     - cd deployments
     - terraform workspace new testing
     - terraform plan -out=plan.out
@@ -93,9 +92,9 @@ python_unit_test:
   stage: test
   script:
     - poetry install -n -v
-    - coverage run -m unittest discover
-    - coverage report
-    - coverage xml
+    - python -m coverage run -m unittest discover
+    - python -m coverage report
+    - python -m coverage xml
   artifacts:
     reports:
       cobertura: coverage.xml
