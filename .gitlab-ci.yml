@@ -15,8 +15,6 @@ variables:
   DOCKER_DRIVER: "overlay2"
   DOCKER_TLS_CERTDIR: "/certs"
   AWS_SDK_LOAD_CONFIG: "false"
-  POETRY_VERSION: "1.1.7"
-  POETRY_HOME: "/opt/.poetry"
   TERRAFORM_VERSION: "0.14.6"
   AWS_REGION: "us-east-1"
   AWS_DEFAULT_REGION: "us-east-1"
@@ -42,16 +40,15 @@ variables:
 # endregion TEMPLATES
 
 # static python code analysis with pylint (pipeline will fail if quality is lower than expected one)
-pylint:
+black:
   <<: *poetry_template
   only:
     - master
     - auto-merge
   stage: check
   script:
-    - git submodule add ../../ai/python-code-check.git
     - poetry install -n -v
-    - poetry run pylint shape_dvaults_etl --rcfile=python-code-check/pylint.ini --fail-under=8
+    - poetry run black --check --diff shape_dvaults_etl
 
 # check terraform file quality
 terraform:
