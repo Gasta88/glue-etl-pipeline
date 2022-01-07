@@ -62,7 +62,6 @@ terraform:
   script:
     - cd deployments
     - terraform init
-    - terraform workspace new testing
     - terraform fmt -check
     - terraform validate
 
