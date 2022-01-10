@@ -47,7 +47,7 @@ black:
     - auto-merge
   stage: check
   script:
-    - poetry install -n -v --no-ansi
+    - poetry install -n -v
     - poetry run black --check --diff shape_dvaults_etl
 
 # check terraform file quality
@@ -91,10 +91,10 @@ python_unit_test:
     - unit-test
   stage: test
   script:
-    - poetry install -n -v --no-ansi
-    - poetry run python -m coverage run -m unittest discover
-    - poetry run python -m coverage report
-    - poetry run python -m coverage xml
+    - poetry install -n -v
+    - poetry run coverage run -m unittest discover
+    - poetry run coverage report
+    - poetry run coverage xml
   artifacts:
     reports:
       cobertura: coverage.xml
@@ -107,5 +107,5 @@ sphinx_doc:
     - sphinx-doc
   stage: doc
   script:
-    - poetry install -n -v --no-ansi
+    - poetry install -n -v
     - sphinx-build -b html docs .sphinx_build
