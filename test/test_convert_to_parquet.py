@@ -20,6 +20,10 @@ class ConvertToParquetTestCase(unittest.TestCase):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         logger = logging.getLogger("py4j")
         logger.setLevel(logging.ERROR)
+        logging.getLogger("boto3").setLevel(logging.CRITICAL)
+        logging.getLogger("botocore").setLevel(logging.CRITICAL)
+        logging.getLogger("s3transfer").setLevel(logging.CRITICAL)
+        logging.getLogger("urllib3").setLevel(logging.CRITICAL)
         sc = SparkContext.getOrCreate()
         glueContext = GlueContext(sc)
         self.spark = glueContext.spark_session
