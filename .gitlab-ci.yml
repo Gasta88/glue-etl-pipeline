@@ -40,30 +40,30 @@ variables:
 # endregion TEMPLATES
 
 # static python code analysis with pylint (pipeline will fail if quality is lower than expected one)
-black:
-  <<: *poetry_template
-  only:
-    - master
-    - auto-merge
-  image: python:3.6.2
-  stage: check
-  script:
-    - poetry install -n -v
-    - poetry run black --check --diff shape_dvaults_etl
-# check terraform file quality
-terraform:
-  only:
-    - master
-    - auto-merge
-  stage: check
-  image:
-    name: hashicorp/terraform:light
-    entrypoint: [""]
-  script:
-    - cd deployments
-    - terraform init
-    - terraform fmt -check
-    - terraform validate
+# black:
+#   <<: *poetry_template
+#   only:
+#     - master
+#     - auto-merge
+#   image: python:3.6.2
+#   stage: check
+#   script:
+#     - poetry install -n -v
+#     - poetry run black --check --diff shape_dvaults_etl
+# # check terraform file quality
+# terraform:
+#   only:
+#     - master
+#     - auto-merge
+#   stage: check
+#   image:
+#     name: hashicorp/terraform:light
+#     entrypoint: [""]
+#   script:
+#     - cd deployments
+#     - terraform init
+#     - terraform fmt -check
+#     - terraform validate
 
 # run terraform unit tests
 terraform_unit_test:
@@ -74,6 +74,7 @@ terraform_unit_test:
   image: python:3.6.2
   stage: test
   before_script:
+    - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
     - *terraform_install_template
   script:
     - cd deployments
