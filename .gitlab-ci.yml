@@ -61,6 +61,7 @@ variables:
 #     entrypoint: [""]
 #   script:
 #     - cd deployments
+#     - terraform workspace select ci_cd || terraform workspace new ci_cd
 #     - terraform init
 #     - terraform fmt -check
 #     - terraform validate
@@ -78,6 +79,7 @@ terraform_unit_test:
     - *terraform_install_template
   script:
     - cd deployments
+    - terraform workspace select ci_cd || terraform workspace new ci_cd
     - terraform init
     - terraform plan -out=plan.out
     - terraform show -json plan.out > plan.json

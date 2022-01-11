@@ -13,7 +13,7 @@ terraform {
   }
   backend "s3" {
     bucket = "terraform-ai-dev-states"
-    key    = "ai-terraform-state-files/dvault-shape-staging.tfstate"
+    key    = "ai-terraform-state-files/dvault-shape-staging-${terraform.workspace}.tfstate"
     region = "us-east-1"
   }
 }
