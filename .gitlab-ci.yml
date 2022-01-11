@@ -51,37 +51,36 @@ black:
     - poetry install -n -v
     - poetry run black --check --diff shape_dvaults_etl
 # check terraform file quality
-# terraform:
-#   only:
-#     - master
-#     - auto-merge
-#   stage: check
-#   image:
-#     name: hashicorp/terraform:light
-#     entrypoint: [""]
-#   script:
-#     - cd deployments
-#     - terraform init
-#     - terraform fmt -check
-#     - terraform validate
+terraform:
+  only:
+    - master
+    - auto-merge
+  stage: check
+  image:
+    name: hashicorp/terraform:light
+    entrypoint: [""]
+  script:
+    - cd deployments
+    - terraform init
+    - terraform fmt -check
+    - terraform validate
 
 # run terraform unit tests
-# terraform_unit_test:
-#   only:
-#     - master
-#     - auto-merge
-#     - unit-test
-#   stage: test
-#   before_script:
-#     - *terraform_install_template
-#   script:
-#     - cd deployments
-#     - terraform workspace show
-#     - terraform plan -out=plan.out
-#     - terraform show -json plan.out > plan.json
-#     - cd ../test
-#     - python -m unittest check_terraform_plan.py
-
+terraform_unit_test:
+  only:
+    - master
+    - auto-merge
+    - unit-test
+  stage: test
+  before_script:
+    - *terraform_install_template
+  script:
+    - cd deployments
+    - terraform workspace show
+    - terraform plan -out=plan.out
+    - terraform show -json plan.out > plan.json
+    - cd ../test
+    - python -m unittest check_terraform_plan.py
 # # run python unit tests
 # python_unit_test:
 #   <<: *poetry_template
