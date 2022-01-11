@@ -66,42 +66,41 @@ variables:
 #     - sterraform fmt -check
 #     - terraform validate
 
-# run terraform unit tests
-terraform_unit_test:
-  only:
-    - master
-    - auto-merge
-    - unit-test
-  image: python:3.6.2
-  stage: test
-  before_script:
-    - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
-    - *terraform_install_template
-  script:
-    - cd deployments
-    - terraform init
-    - terraform workspace select dev || terraform workspace new dev
-    - terraform plan -out=plan.out
-    - terraform show -json plan.out > plan.json
-    - cd ../test
-    - python -m unittest check_terraform_plan.py
-# # run python unit tests
-# python_unit_test:
-#   <<: *poetry_template
+# # run terraform unit tests
+# terraform_unit_test:
 #   only:
 #     - master
 #     - auto-merge
 #     - unit-test
+#   image: python:3.6.2
 #   stage: test
+#   before_script:
+#     - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
+#     - *terraform_install_template
 #   script:
-#     - poetry install -n -v
-#     - poetry run coverage run -m unittest discover
-#     - poetry run coverage report
-#     - poetry run coverage xml
-#   artifacts:
-#     reports:
-#       cobertura: coverage.xml
-
+#     - cd deployments
+#     - terraform init
+#     - terraform workspace select dev || terraform workspace new dev
+#     - terraform plan -out=plan.out
+#     - terraform show -json plan.out > plan.json
+#     - cd ../test
+#     - python -m unittest check_terraform_plan.py
+# run python unit tests
+python_unit_test:
+  <<: *poetry_template
+  only:
+    - master
+    - auto-merge
+    - unit-test
+  stage: test
+  script:
+    - poetry install -n -v
+    - poetry run coverage run -m unittest discover
+    - poetry run coverage report
+    - poetry run coverage xml
+  artifacts:
+    reports:
+      cobertura: coverage.xml
 # generates sphinx documentation and upload it to the docs bucket
 # sphinx_doc:
 #   <<: *poetry_template
