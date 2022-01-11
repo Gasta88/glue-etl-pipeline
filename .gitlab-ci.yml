@@ -71,12 +71,14 @@ terraform_unit_test:
     - master
     - auto-merge
     - unit-test
+  image: python:3.6.2
   stage: test
   before_script:
     - *terraform_install_template
   script:
     - cd deployments
     - terraform workspace show
+    - terraform init -backend=false
     - terraform plan -out=plan.out
     - terraform show -json plan.out > plan.json
     - cd ../test
