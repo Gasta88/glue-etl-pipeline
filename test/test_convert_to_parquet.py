@@ -5,6 +5,7 @@ import warnings
 from shape_dvaults_etl.convert_to_parquet import create_parquet
 import os
 import shutil
+import logging
 
 TEST_DATA_DIR = "test/data/convert_to_parquet"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
@@ -17,6 +18,8 @@ class ConvertToParquetTestCase(unittest.TestCase):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
+        logger = logging.getLogger("py4j")
+        logger.setLevel(logging.WARN)
         sc = SparkContext.getOrCreate()
         glueContext = GlueContext(sc)
         self.spark = glueContext.spark_session
