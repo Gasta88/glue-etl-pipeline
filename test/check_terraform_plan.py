@@ -29,8 +29,7 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_s3_bucket_object"
         }
-        scripts_prefix = prefixes.get("aws_s3_bucket_object.scripts-folder", None)
-        self.assertIsNotNone(scripts_prefix)
+        self.assertEqual(len(prefixes), 6)
 
         data_profiler_prefix = prefixes.get(
             "aws_s3_bucket_object.data-profiler-logs-folder", None
