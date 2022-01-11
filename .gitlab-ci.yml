@@ -94,8 +94,7 @@ python_unit_test:
     - unit-test
   stage: test
   script:
-    - poetry install -n -v
-    - poetry run python -m unittest discover
+    - python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
 # sphinx_doc:
 #   <<: *poetry_template
