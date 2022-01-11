@@ -24,7 +24,7 @@ class FlatDvaultTestCase(unittest.TestCase):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         s3 = boto3.resource("s3", region_name="us-east-1")
         self.media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
-        self.all_medias = [obj.key for obj in list(media_bucket.objects.all())]
+        self.all_medias = [obj.key for obj in list(self.media_bucket.objects.all())]
         self.all_testfiles = [f for f in os.listdir(TEST_DATA_DIR) if os.path.isfile(f)]
 
     def tearDown(self):

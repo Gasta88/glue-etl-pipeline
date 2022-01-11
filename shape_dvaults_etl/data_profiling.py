@@ -14,25 +14,23 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 logger.info("Get run properties for the Glue workflow.")
-args = getResolvedOptions(
-    sys.argv,
-    ["WORKFLOW_NAME", "WORKFLOW_RUN_ID"],
-)
-workflow_name = args["WORKFLOW_NAME"]
-workflow_run_id = args["WORKFLOW_RUN_ID"]
-
-glue = boto3.client("glue")
-run_properties = glue.get_workflow_run_properties(
-    Name=workflow_name, RunId=workflow_run_id
-)["RunProperties"]
 
 
-def get_run_properties(run_properties):
+def get_run_properties():
     """Return enhanced job properties.
 
-    :param run_properties: collection of stabdard Glue Workflow run properties.
     :return config: dictionary with properties used in flat_dvaults Glue Job."""
     config = {}
+    args = getResolvedOptions(
+        sys.argv,
+        ["WORKFLOW_NAME", "WORKFLOW_RUN_ID"],
+    )
+    workflow_name = args["WORKFLOW_NAME"]
+    workflow_run_id = args["WORKFLOW_RUN_ID"]
+    glue = boto3.client("glue")
+    run_properties = glue.get_workflow_run_properties(
+        Name=workflow_name, RunId=workflow_run_id
+    )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
     s3 = boto3.resource("s3", region_name="us-east-1")
     config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
@@ -148,7 +146,7 @@ def main():
     """
     Run main steps in the data_profiling Glue Job.
     """
-    run_props = get_run_properties(run_properties)
+    run_props = get_run_properties()
     for obj_key in run_props["DVAULT_FILES"]:
         logger.info(f"Profiling file {obj_key}.")
         file_name = obj_key.split("/")[-1]

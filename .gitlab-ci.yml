@@ -87,7 +87,6 @@ variables:
 #     - python -m unittest check_terraform_plan.py
 # run python unit tests
 python_unit_test:
-  <<: *poetry_template
   only:
     - master
     - auto-merge
