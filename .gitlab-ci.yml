@@ -45,7 +45,7 @@ black:
   only:
     - master
     - auto-merge
-  image: python:3.6-slim
+  image: python:3.6.2
   stage: check
   script:
     - poetry install -n -v
