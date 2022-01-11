@@ -19,7 +19,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
         logger = logging.getLogger("py4j")
-        logger.setLevel(logging.WARN)
+        logger.setLevel(logging.ERROR)
         sc = SparkContext.getOrCreate()
         glueContext = GlueContext(sc)
         self.spark = glueContext.spark_session
