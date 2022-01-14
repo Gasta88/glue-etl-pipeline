@@ -3,6 +3,7 @@ import boto3
 import logging
 from awsglue.utils import getResolvedOptions
 import sys
+from cerberus import Validator
 
 # Setup logger
 logger = logging.getLogger()
@@ -42,41 +43,174 @@ def get_run_properties():
     return config
 
 
-def flatten_data(y):
+def run_data_profiling(event, service_type):
+    """Perform data profiling with Cerberus package.
+
+    :param event: nested dictionary representation of the dvault.
+    :service_type: label for either "event" or "prediction".
+    :return bool: data profiling flag when is successful/unsuccessful.
+    :return errors: dictionaries of exceptions encoutered in the profiling.
     """
-    Flatten nested dictionary into a linear schema.
+    schema = {}
+    if service_type == "event":
+        # when EVENT has a suitable prediction_id and might not have a service attribute.
+        subschema_A = {
+            "template_dvault_version": {
+                "type": "string",
+                "required": True,
+            },
+            "id": {"type": "string", "required": True},
+            "shape_id": {"type": "string", "required": True},
+            "prediction_id": {"type": "string", "required": True},
+            "service": {"type": "string", "allowed": {"summarizer", "headline", "ste"}},
+            "timestamp": {"type": "integer", "required": True},
+            "reporter": {
+                "type": "string",
+                "required": True,
+                "allowed": ["user", "builder"],
+            },
+            "type": {
+                "type": "string",
+                "required": True,
+                "allowed": [
+                    "ADD_TAG",
+                    "SEARCH_IMAGE",
+                    "PUBLISH",
+                    "DELETE",
+                    "DELETE_SLIDE",
+                ],
+            },
+        }
+        # when EVENT has a service attribute, but not not have a prediction_id.
+        subschema_B = {
+            "template_dvault_version": {
+                "type": "string",
+                "required": True,
+            },
+            "id": {"type": "string", "required": True},
+            "shape_id": {"type": "string", "required": True},
+            "prediction_id": {"type": "string", "nullable": True},
+            "service": {
+                "type": "string",
+                "required": True,
+                "allowed": {"summarizer", "headline", "ste"},
+            },
+            "timestamp": {"type": "integer", "required": True},
+            "reporter": {
+                "type": "string",
+                "required": True,
+                "allowed": ["user", "builder"],
+            },
+            "type": {
+                "type": "string",
+                "required": True,
+                "allowed": [
+                    "ADD_TAG",
+                    "SEARCH_IMAGE",
+                    "PUBLISH",
+                    "DELETE",
+                    "DELETE_SLIDE",
+                ],
+            },
+        }
+        schema = {
+            "version": {"type": "string", "required": True},
+            "id": {"type": "string", "required": True},
+            "detail-type": {
+                "type": "string",
+                "required": True,
+                "allowed": ["DVaultEvaluationEvent"],
+            },
+            "source": {"type": "string", "required": True},
+            "account": {"type": "string", "required": True},
+            "time": {"type": "string", "required": True},
+            "region": {"type": "string", "required": True},
+            "detail": {
+                "type": "dict",
+                "required": True,
+                "schema": {
+                    "id": {"type": "string", "required": True},
+                    "type": {
+                        "type": "string",
+                        "required": True,
+                        "allowed": ["DVaultEvaluationEvent"],
+                    },
+                    "timestamp": {"type": "integer", "required": True},
+                    "partitionKey": {"type": "string", "required": True},
+                    "evaluation": {
+                        "type": "dict",
+                        "required": True,
+                        "anyof_schema": [subschema_A, subschema_B],
+                    },
+                },
+            },
+        }
+    else:
+        schema = {
+            "version": {"type": "string", "required": True},
+            "id": {"type": "string", "required": True},
+            "detail-type": {
+                "type": "string",
+                "required": True,
+                "allowed": ["DVaultPredictionEvent"],
+            },
+            "source": {"type": "string", "required": True},
+            "account": {"type": "string", "required": True},
+            "time": {"type": "string", "required": True},
+            "region": {"type": "string", "required": True},
+            "detail": {
+                "type": "dict",
+                "required": True,
+                "schema": {
+                    "id": {"type": "string", "required": True},
+                    "type": {
+                        "type": "string",
+                        "required": True,
+                        "allowed": ["DVaultPredictionEvent"],
+                    },
+                    "timestamp": {"type": "integer", "required": True},
+                    "partitionKey": {"type": "string", "required": True},
+                    "prediction": {
+                        "type": "dict",
+                        "required": True,
+                        "schema": {
+                            "template_dvault_version": {
+                                "type": "string",
+                                "required": True,
+                            },
+                            "id": {"type": "string", "required": True},
+                            "shape_id": {"type": "string", "required": True},
+                            "id": {"type": "string", "required": True},
+                            "service": {
+                                "type": "string",
+                                "required": True,
+                                "allowed": ["summarizer", "headline", "ste"],
+                            },
+                            "timestamp": {"type": "integer", "required": True},
+                        },
+                    },
+                },
+            },
+        }
+    v = Validator(schema, allow_unknown=True)
+    v.validate(event)
+    if not v:
+        return (False, v.errors)
+    return (True, {})
 
-    :param y: nested JSON data.
-    :return out: linear JSON data.
-    """
-    out = {}
 
-    def flatten(x, name=""):
-        if type(x) is dict:
-            for a in x:
-                flatten(x[a], name + a + "_")
-        elif type(x) is list:
-            i = 0
-            for a in x:
-                flatten(a, name + str(i) + "_")
-                i += 1
-        else:
-            out[name[:-1]] = x
-
-    flatten(y)
-    return out
-
-
-def _get_service_name(el):
+def _get_service_name_and_type(el):
     """
     Retrieve service name from dvault file.
 
     :param el: dictionary that represent the event.
     :return service_name: string that reresent the dvaut file service name.
+    :return service_type: string for EVENT or PREDICTION.
     """
     service_name = None
     if el["detail"]["type"] == "DVaultPredictionEvent":
         service_name = el["detail"]["prediction"]["service"]
+        service_type = "prediction"
     if el["detail"]["type"] == "DVaultEvaluationEvent":
         service_name = el["detail"]["evaluation"].get("service", None)
         if service_name is None:
@@ -90,7 +224,8 @@ def _get_service_name(el):
                 service_name = el["detail"]["evaluation"]["prediction_id"].split("#")[
                     -1
                 ]
-    return service_name
+        service_type = "event"
+    return (service_name, service_type)
 
 
 def split_files(tmp_filename):
@@ -159,22 +294,20 @@ def main():
             dirty_dvaults = []
             clean_dvaults = []
             for event in events_arr:
-                service_name = _get_service_name(event)
-                if service_name is None:
+                service_name, service_type = _get_service_name_and_type(event)
+                profile_flag, errors = run_data_profiling(event, service_type)
+                info = {
+                    "filename": tmp_filename,
+                    "dvault_id": event["id"],
+                    "dvault_type": service_type,
+                    "dvault_service": service_name,
+                    "pass_profiling": profile_flag,
+                    "errors": errors,
+                }
+                if (service_name is None) or not (profile_flag):
                     dirty_dvaults.append(json.dumps(event))
                 else:
                     clean_dvaults.append(json.dumps(event))
-                # TODO: define profiling strategy here
-                # suite = get_expectation_suite(event, service_name, dvault_type)
-                # if suite:
-                #     failures =[k for k,v in suite.items() if not(v.success)]
-                #     if len(failures) > 0:
-                #         for f in failures:
-                #             print(f'Event {event["detail"]["id"]} at position {p} failed check "{f}"')
-                #         dirty_dvaults.append(json.dumps(event))
-                # else:
-                #     dirty_dvaults.append(json.dumps(event))
-                # clean_dvaults.append(json.dumps(event))
         except Exception as e:
             logger.error(
                 "Something wrong with extraction of dvaults from file. Process stopped."
