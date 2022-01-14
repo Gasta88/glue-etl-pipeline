@@ -47,6 +47,15 @@ resource "aws_s3_bucket_object" "scripts-folder" {
   etag     = filemd5("../shape_dvaults_etl/${each.value}")
 }
 
+resource "aws_s3_bucket_object" "dependencies-folder" {
+  for_each = fileset("../dependencies", "*.whl")
+  bucket   = aws_s3_bucket.dvault-bucket.bucket
+  acl      = "private"
+  key      = "dependencies/${each.value}"
+  source   = "../dependencies/${each.value}"
+  etag     = filemd5("../dependencies/${each.value}")
+}
+
 resource "aws_s3_bucket_object" "data-profiler-logs-folder" {
   bucket = aws_s3_bucket.dvault-bucket.bucket
   acl    = "private"
@@ -221,7 +230,8 @@ resource "aws_glue_job" "profile-dvault-job" {
     "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = ""
+    "--enable-metrics"                   = "",
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/Cerberus-1.3.3-py3-none-any.whl"
   }
   timeout = 15
 }
