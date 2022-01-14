@@ -48,7 +48,7 @@ resource "aws_s3_bucket_object" "scripts-folder" {
 }
 
 resource "aws_s3_bucket_object" "dependencies-folder" {
-  for_each = fileset("../dependencies", "*.zip")
+  for_each = fileset("../dependencies", "*.whl")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
   acl      = "private"
   key      = "dependencies/${each.value}"
@@ -231,7 +231,7 @@ resource "aws_glue_job" "profile-dvault-job" {
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",
-    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/cerberus.zip"
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/Cerberus-1.3.3-py3-none-any.whl"
   }
   timeout = 15
 }
