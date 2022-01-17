@@ -1,4 +1,5 @@
 import boto3
+import os
 import unittest
 import warnings
 from shape_dvaults_etl.flat_dvaults import (
@@ -22,7 +23,13 @@ class FlatDvaultTestCase(unittest.TestCase):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        s3 = boto3.resource("s3", region_name="us-east-1")
+        session = boto3.Session(profile_name="default")
+        s3 = session.resource(
+            "s3",
+            region_name="us-east-1",
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", None),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", None),
+        )
         self.media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
         self.all_medias = [obj.key for obj in list(self.media_bucket.objects.all())]
         self.all_testfiles = [f for f in os.listdir(TEST_DATA_DIR) if os.path.isfile(f)]

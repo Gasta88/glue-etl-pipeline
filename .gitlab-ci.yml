@@ -16,8 +16,9 @@ variables:
   DOCKER_TLS_CERTDIR: "/certs"
   AWS_SDK_LOAD_CONFIG: "false"
   TERRAFORM_VERSION: "0.14.6"
-  AWS_REGION: "us-east-1"
-  AWS_DEFAULT_REGION: "us-east-1"
+  AWS_DEFAULT_REGION: "$AWS_REGION"
+  AWS_ACCESS_KEY_ID: "$AWS_ACCESS_KEY_ID"
+  AWS_SECRET_ACCESS_KEY: "$AWS_SECRET_ACCESS_KEY"
 
 # endregion MAIN_SETTINGS
 
@@ -93,6 +94,9 @@ python_unit_test:
     - unit-test
   image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
   stage: test
+  before_script:
+    - pip install cerberus==1.3.3
+    - echo "$AWS_ACCESS_KEY_ID"
   script:
     - python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
