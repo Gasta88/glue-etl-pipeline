@@ -194,10 +194,10 @@ def run_data_profiling(event, service_type):
             },
         }
     v = Validator(schema, allow_unknown=True)
-    v.validate(event)
-    if not v:
-        return (False, v.errors)
-    return (True, {})
+    flag = v.validate(event)
+    if not flag:
+        return (flag, v.errors)
+    return (flag, {})
 
 
 def _get_service_name_and_type(el):

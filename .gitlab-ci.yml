@@ -99,12 +99,12 @@ python_unit_test:
   image: python:3.6.2
   stage: test
   script:
-    # - python -m aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-    # - python -m aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-    # - python -m aws configure set region "$AWS_DEFAULT_REGION"
-    # - python -m aws configure set aws_profile "default"
-    # - python -m aws configure set AWS_DEFAULT_PROFILE "default"
-    # - cat ~/.aws/credentials
+    - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+    - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+    - aws configure set region "$AWS_DEFAULT_REGION"
+    - aws configure set aws_profile "default"
+    - aws configure set AWS_DEFAULT_PROFILE "default"
+    - cat ~/.aws/credentials
     - python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:

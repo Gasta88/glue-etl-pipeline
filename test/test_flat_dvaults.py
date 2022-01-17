@@ -19,6 +19,8 @@ MEDIA_BUCKETNAME = "shape-media-library-staging"
 class FlatDvaultTestCase(unittest.TestCase):
     """Test suite for first step in Glue Workflow."""
 
+    maxDiff = None
+
     def setUp(self):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
@@ -63,7 +65,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                     "detail": {
                         "prediction": {
                             "input": {
-                                "sentences_score": [{"score": -1}, {"score": 0.5845}]
+                                "sentences_scores": [{"score": -1}, {"score": 0.5845}]
                             }
                         }
                     }
@@ -72,7 +74,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                     "detail": {
                         "prediction": {
                             "input": {
-                                "sentences_score": [{"score": 0.44447}, {"score": -1}]
+                                "sentences_scores": [{"score": 0.44447}, {"score": -1}]
                             }
                         }
                     }
@@ -87,7 +89,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                     "detail": {
                         "prediction": {
                             "input": {
-                                "sentences_score": [{"score": -1.0}, {"score": 0.5845}]
+                                "sentences_scores": [{"score": -1.0}, {"score": 0.5845}]
                             }
                         }
                     }
@@ -96,7 +98,10 @@ class FlatDvaultTestCase(unittest.TestCase):
                     "detail": {
                         "prediction": {
                             "input": {
-                                "sentences_score": [{"score": 0.44447}, {"score": -1.0}]
+                                "sentences_scores": [
+                                    {"score": 0.44447},
+                                    {"score": -1.0},
+                                ]
                             }
                         }
                     }

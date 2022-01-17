@@ -5,6 +5,8 @@ import json
 class CheckTerraformPlan(unittest.TestCase):
     """Test suite to check the layout of the Terraform deployment from the JSON plan."""
 
+    maxDiff = None
+
     def setUp(self):
         with open("../deployments/plan.json") as f:
             self.plan = json.load(f)

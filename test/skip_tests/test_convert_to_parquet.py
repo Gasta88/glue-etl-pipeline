@@ -12,6 +12,8 @@ MEDIA_BUCKETNAME = "shape-media-library-staging"
 class ConvertToParquetTestCase(unittest.TestCase):
     """Test suite for first step in Glue Workflow."""
 
+    maxDiff = None
+
     def setUp(self):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)

@@ -9,6 +9,8 @@ TEST_DATA_DIR = "test/data/flat_dvaults"
 class DataProfilingTestCase(unittest.TestCase):
     """Test suite for data profiling step in Glue Workflow."""
 
+    maxDiff = None
+
     def setUp(self):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
