@@ -1,9 +1,6 @@
 import unittest
 import warnings
-from shape_dvaults_etl.data_profiling import (
-    run_data_profiling,
-    _get_service_name_and_type,
-)
+from shape_dvaults_etl.data_profiling import run_data_profiling
 import os
 
 TEST_DATA_DIR = "test/data/flat_dvaults"

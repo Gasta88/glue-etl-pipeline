@@ -1,5 +1,4 @@
-from awsglue.context import GlueContext
-from pyspark.context import SparkContext
+from pyspark.sql import SparkSession
 import unittest
 import warnings
 from shape_dvaults_etl.convert_to_parquet import create_parquet
@@ -17,9 +16,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        sc = SparkContext.getOrCreate()
-        glueContext = GlueContext(sc)
-        self.spark = glueContext.spark_session
+        self.spark = SparkSession.builder.getOrCreate()
         self.spark.sparkContext.setLogLevel("CRITICAL")
         self.dest_folder = os.mkdir(f"{TEST_DATA_DIR}/dest")
         self.ALL_JSONS = [f for f in os.listdir(TEST_DATA_DIR) if os.path.isfile(f)]
@@ -35,6 +32,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
     def tearDown(self):
         """Remove test settings."""
         shutil.rmtree(self.dest_folder)
+        self.spark.stop()
 
     def test_create_parquet(self):
         """Test shape_dvaults_etl.glue_workflow_jobs.convert_to_parquet.create_parquet method."""
