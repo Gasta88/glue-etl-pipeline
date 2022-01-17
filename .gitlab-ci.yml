@@ -28,6 +28,11 @@ variables:
     - export POETRY_HOME=./poetry
     - export PATH=$PATH:./poetry/bin
     - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - poetry debug info
+    - poetry config --list
+    - poetry install -n -v
 
 # template to install terraform binaries
 .terraform_install_template: &terraform_install_template
@@ -93,15 +98,13 @@ python_unit_test:
   #image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
   image: python:3.6.2
   stage: test
-  before_script:
-    - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-    - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-    - aws configure set region "$AWS_DEFAULT_REGION"
-    - aws configure set aws_profile "default"
-    - aws configure set AWS_DEFAULT_PROFILE "default"
-    - cat ~/.aws/credentials
   script:
-    - poetry install -n -v
+    # - python -m aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+    # - python -m aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+    # - python -m aws configure set region "$AWS_DEFAULT_REGION"
+    # - python -m aws configure set aws_profile "default"
+    # - python -m aws configure set AWS_DEFAULT_PROFILE "default"
+    # - cat ~/.aws/credentials
     - python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:

@@ -1,7 +1,6 @@
 import json
 import boto3
 import logging
-from awsglue.utils import getResolvedOptions
 import sys
 
 # Setup logger
@@ -20,6 +19,8 @@ def get_run_properties():
     """Return enhanced job properties.
 
     :return config: dictionary with properties used in flat_dvaults Glue Job."""
+    from awsglue.utils import getResolvedOptions
+
     config = {}
     args = getResolvedOptions(
         sys.argv,
