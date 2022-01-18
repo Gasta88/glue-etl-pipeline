@@ -32,8 +32,9 @@ class FlatDvaultTestCase(unittest.TestCase):
             aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", None),
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", None),
         )
-        self.media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
-        self.all_medias = [obj.key for obj in list(self.media_bucket.objects.all())]
+        self.media_bucketname = MEDIA_BUCKETNAME
+        media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
+        self.all_medias = [obj.key for obj in list(media_bucket.objects.all())]
         self.all_testfiles = [f for f in os.listdir(TEST_DATA_DIR) if os.path.isfile(f)]
 
     def tearDown(self):
@@ -81,7 +82,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                 },
             ],
             "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "ste": [[{"test": "ignore"}, {"test": "ignore_again"}]],
+            "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         expected_predictions = {
             "summarizer": [
@@ -133,12 +134,20 @@ class FlatDvaultTestCase(unittest.TestCase):
                 },
             ],
             "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "ste": [[{"test": "ignore"}, {"test": "ignore_again"}]],
+            "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         expected_events = {
             "summarizer": [
-                {"detail": {"evaluation": {"payload": {"paragraph": "1"}}}},
-                {"detail": {"evaluation": {"payload": {"paragraph": "2"}}}},
+                {
+                    "detail": {
+                        "evaluation": {"type": "PUBLISH", "payload": {"paragraph": "1"}}
+                    }
+                },
+                {
+                    "detail": {
+                        "evaluation": {"type": "PUBLISH", "payload": {"paragraph": "2"}}
+                    }
+                },
             ],
             "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
             "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
@@ -173,7 +182,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                 },
             ],
             "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "summarizer": [[{"test": "ignore"}, {"test": "ignore_again"}]],
+            "summarizer": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         expected_events = {
             "ste": [
@@ -269,7 +278,9 @@ class FlatDvaultTestCase(unittest.TestCase):
         test_events = {}
         for service_name, elements in events.items():
             test_events[service_name] = [
-                _replace_image_uri(el, service_name, self.media_bucket, self.all_medias)
+                _replace_image_uri(
+                    el, service_name, self.media_bucketname, self.all_medias
+                )
                 for el in elements
             ]
         self.assertDictEqual(test_events, expected_events)
