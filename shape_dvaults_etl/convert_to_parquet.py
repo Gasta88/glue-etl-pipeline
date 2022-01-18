@@ -1,14 +1,16 @@
 import boto3
-from awsglue.utils import getResolvedOptions
-from awsglue.context import GlueContext
-from pyspark.context import SparkContext
-from awsglue.job import Job
+import logging
 import sys
 
-sc = SparkContext.getOrCreate()
-glueContext = GlueContext(sc)
-logger = glueContext.get_logger()
-job = Job(glueContext)
+
+# Setup logger
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 
 def get_run_properties():
@@ -16,7 +18,13 @@ def get_run_properties():
 
     :return config: dictionary with properties used in flat_dvaults Glue Job.
     """
+    from awsglue.utils import getResolvedOptions
+    from awsglue.context import GlueContext
+    from pyspark.context import SparkContext
+
     config = {}
+    sc = SparkContext.getOrCreate()
+    glueContext = GlueContext(sc)
     config["SPARK"] = glueContext.spark_session
     logger.info("Get run properties for the Glue workflow.")
     args = getResolvedOptions(
@@ -29,8 +37,6 @@ def get_run_properties():
     run_properties = glue.get_workflow_run_properties(
         Name=workflow_name, RunId=workflow_run_id
     )["RunProperties"]
-
-    job.init(args["JOB_NAME"], args)
 
     config[
         "OUTPUT_PATH"
@@ -93,7 +99,6 @@ def main():
             run_props["LANDING_BUCKETNAME"],
             run_props["ALL_JSONS"],
         )
-    job.commit()
 
 
 if __name__ == "__main__":
