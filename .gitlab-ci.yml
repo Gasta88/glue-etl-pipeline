@@ -89,26 +89,13 @@ terraform_unit_test:
     - python -m unittest check_terraform_plan.py
 # run python unit tests
 python_unit_test:
-  # <<: *poetry_template
+  <<: *posetry_template
   only:
     - master
     - auto-merge
     - unit-test
   image: python:3.6.2
   stage: test
-  before_script:
-    - apt-get update && apt-get install -y default-jdk wget software-properties-common unzip libpq-dev build-essential libssl-dev libffi-dev && apt-get clean
-    - wget https://archive.apache.org/dist/spark/spark-3.0.1/spark-3.0.1-bin-hadoop3.2.tgz && tar xvf spark-3.0.1-bin-hadoop3.2.tgz && mv spark-3.0.1-bin-hadoop3.2/ /usr/local/spark && ln -s /usr/local/spark spark
-    - export CONFIG_CACHE_DURATION=0.5
-    - export POETRY_VERSION=1.1.11
-    - export POETRY_HOME=./poetry
-    - export PATH=$PATH:./poetry/bin
-    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-    - python -m venv .venv
-    - source .venv/bin/activate
-    - poetry debug info
-    - poetry config --list
-    - poetry install -n -v
   script:
     - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
     - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
