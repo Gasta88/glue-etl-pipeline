@@ -95,20 +95,15 @@ python_unit_test:
     - master
     - auto-merge
     - unit-test
-  #image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
-  image: python:3.6.2
+  image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
+  # image: python:3.6.2
   stage: test
   script:
-    - apt-get update && apt-get install default-jdk -y
-    - export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
-    - export PYSPARK_SUBMIT_ARGS="--master local[2] pyspark-shell"
     - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
     - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
     - aws configure set region "$AWS_DEFAULT_REGION"
     - aws configure set aws_profile "default"
     - aws configure set AWS_DEFAULT_PROFILE "default"
-    - cat ~/.aws/credentials
-    - java -version
     - python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:
