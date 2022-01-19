@@ -89,7 +89,7 @@ terraform_unit_test:
     - python -m unittest check_terraform_plan.py
 # run python unit tests
 python_unit_test:
-  <<: *poetry_template
+  # <<: *poetry_template
   only:
     - master
     - auto-merge
@@ -97,13 +97,17 @@ python_unit_test:
   image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
   # image: python:3.6.2
   stage: test
+  before_script:
+    - pip install -Iv Cerberus==1.3.3
+    - pip install -Iv boto3==1.20.37
+    - pip install -Iv awscli==1.22.37
   script:
     - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
     - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
     - aws configure set region "$AWS_DEFAULT_REGION"
     - aws configure set aws_profile "default"
     - aws configure set AWS_DEFAULT_PROFILE "default"
-    - poetry run python -m unittest discover
+    - python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:
   <<: *poetry_template

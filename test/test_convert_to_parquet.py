@@ -18,7 +18,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        self.spark = SparkSession.builder.getOrCreate()
+        self.spark = SparkSession.builder.setMaster("local").getOrCreate()
         self.spark.sparkContext.setLogLevel("CRITICAL")
         self.dest_folder = os.mkdir(f"{TEST_DATA_DIR}/dest")
         self.ALL_JSONS = [f for f in os.listdir(TEST_DATA_DIR) if os.path.isfile(f)]
