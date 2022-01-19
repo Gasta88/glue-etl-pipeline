@@ -51,7 +51,6 @@ black:
   image: python:3.6.2
   stage: check
   script:
-    - poetry install -n -v
     - poetry run black --check --diff shape_dvaults_etl
 # check terraform file quality
 terraform:
@@ -104,7 +103,7 @@ python_unit_test:
     - aws configure set region "$AWS_DEFAULT_REGION"
     - aws configure set aws_profile "default"
     - aws configure set AWS_DEFAULT_PROFILE "default"
-    - python -m unittest discover
+    - poetry run python -m unittest discover
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:
   <<: *poetry_template

@@ -2,7 +2,7 @@
 name = "shape-dvault"
 version = "0.1.0"
 description = "Shape dvault ETL pipeline"
-authors = ["francesco.gastaldello <francesco.gastaldello@docebo.com>"]
+authors = ["Francesco Gastaldello <francesco.gastaldello@docebo.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.6.2"
