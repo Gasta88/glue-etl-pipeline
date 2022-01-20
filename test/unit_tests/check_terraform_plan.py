@@ -8,7 +8,7 @@ class CheckTerraformPlan(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        with open("../deployments/plan.json") as f:
+        with open("../../deployments/plan.json") as f:
             self.plan = json.load(f)
 
     def test_landing_bucket(self):
