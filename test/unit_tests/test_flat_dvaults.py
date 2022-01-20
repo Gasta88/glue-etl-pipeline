@@ -12,7 +12,7 @@ from shape_dvaults_etl.flat_dvaults import (
 )
 import os
 
-TEST_DATA_DIR = "test/data/flat_dvaults"
+TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
 
 

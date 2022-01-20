@@ -109,7 +109,7 @@ sphinx_doc:
   only:
     - master
     - sphinx-doc
-  stage: docs
+  stage: doc
   script:
     - poetry install -n -v
     - sphinx-build -b html docs .sphinx_build

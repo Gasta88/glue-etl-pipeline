@@ -3,7 +3,7 @@ import warnings
 from shape_dvaults_etl.data_profiling import run_data_profiling
 import os
 
-TEST_DATA_DIR = "test/data/flat_dvaults"
+TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
 
 
 class DataProfilingTestCase(unittest.TestCase):
