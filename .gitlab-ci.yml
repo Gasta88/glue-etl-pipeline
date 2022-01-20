@@ -65,7 +65,7 @@ terraform:
     - cd deployments
     - terraform init
     - terraform workspace select dev || terraform workspace new dev
-    - sterraform fmt -check
+    - terraform fmt -check
     - terraform validate
 
 # run terraform unit tests
@@ -103,6 +103,28 @@ python_unit_test:
     - aws configure set aws_profile "default"
     - aws configure set AWS_DEFAULT_PROFILE "default"
     - python -m unittest discover -s test/unit_tests
+
+# run end-to-end tests
+e2e_test:
+  <<: *poetry_template
+  - *terraform_install_template
+only:
+  - master
+  - auto-merge
+  - e2e-test
+image: python:3.6.2
+stage: test
+script:
+  - cd deployments
+  - terraform init
+  - terraform workspace select dev || terraform workspace new dev
+  - terraform apply --auto-approve
+  - cd ../test/end_to_end_tests
+  - python run_e2e_test.py
+after_script:
+  - cd deployments
+  - terraform destroy --auto-approve
+
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:
   <<: *poetry_template
