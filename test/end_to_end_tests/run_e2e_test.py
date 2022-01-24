@@ -78,18 +78,18 @@ def compare_files(landing_bucketname, expected_parquet_files):
         except Exception as e:
             test_flag = False
             msg = e
-            results[parquet_name] = {test_flag, msg}
+            results[parquet_name] = (test_flag, msg)
             continue
         if (final_table.num_rows + final_table.num_columns) == 0:
             test_flag = False
             msg = "The final Parquet file is empty"
-            results[parquet_name] = {test_flag, msg}
+            results[parquet_name] = (test_flag, msg)
             continue
         test_flag = expected_table.equals(final_table)
         if test_flag == False:
-            results[parquet_name] = {test_flag, "Parquet files are not equals."}
+            results[parquet_name] = (test_flag, "Parquet files are not equals.")
         else:
-            results[parquet_name] = {test_flag, msg}
+            results[parquet_name] = (test_flag, msg)
     return results
 
 
@@ -109,16 +109,16 @@ def main():
     status = None
     # Sleep for 60 seconds and constantly check if the worflow is completed
     while status not in ["COMPLETED", "STOPPED", "ERROR"]:
+        print("Workflow is running.")
         time.sleep(60)
         status = get_workflow_status(workflow_name, run_id)
-    print(f"Workflow run has finishe with status: {status}")
+    print(f"Workflow run has finished with status: {status}")
 
     if status == "COMPLETED":
         test_res = compare_files(landing_bucketname, expected_parquet_files)
-        for k, v in test_res.items():
-            for f, m in v.items():
-                if not f:
-                    print(f"{k} has failed: {m}")
+        for fname, tpl in test_res.items():
+            if not tpl[0]:
+                print(f"{fname} has failed: {tpl[1]}")
     else:
         print("Wrong status to finish the workflow.")
         sys.exit(1)

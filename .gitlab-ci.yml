@@ -139,13 +139,13 @@ e2e_test:
   script:
     - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
     - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-    - aws configure set region "$AWS_DEFAULT_REGION"
+    - aws configure set region "$AWS_REGION"
     - aws configure set aws_profile "default"
     - aws configure set AWS_DEFAULT_PROFILE "default"
     - cd deployments
     - terraform init
     - terraform workspace select dev || terraform workspace new dev
-    - terraform apply --auto-approve
+    - terraform apply --auto-approve --parallelism=1
     - cd ../test/end_to_end_tests
     - python run_e2e_test.py
   after_script:
