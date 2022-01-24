@@ -1,14 +1,16 @@
 # region MAIN_SETTINGS
 
 default:
-  image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
+  # image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
 
   tags:
     - ai-runner-pool
 
 stages:
   - check
-  - test
+  - unit-tests
+  - integration-tests
+  - deploy
   - doc
 
 variables:
@@ -22,17 +24,17 @@ variables:
 # region TEMPLATES
 
 .poetry_template: &poetry_template
-  before_script:
-    - export CONFIG_CACHE_DURATION=0.5
-    - export POETRY_VERSION=1.1.11
-    - export POETRY_HOME=./poetry
-    - export PATH=$PATH:./poetry/bin
-    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
-    - python -m venv .venv
-    - source .venv/bin/activate
-    - poetry debug info
-    - poetry config --list
-    - poetry install -n -v
+  - export CONFIG_CACHE_DURATION=0.5
+  - export POETRY_VERSION=1.1.11
+  - export POETRY_HOME=./poetry
+  - export PATH=$PATH:./poetry/bin
+  - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+  - python -m venv .venv
+  - source .venv/bin/activate
+  - poetry debug info
+  - poetry config --list
+  - poetry run pip install --upgrade pip
+  - poetry install -n -v
 
 # template to install terraform binaries
 .terraform_install_template: &terraform_install_template
@@ -44,12 +46,14 @@ variables:
 
 # static python code analysis with pylint (pipeline will fail if quality is lower than expected one)
 black:
-  <<: *poetry_template
   only:
     - master
     - auto-merge
+    - syntax-check
   image: python:3.6.2
   stage: check
+  before_script:
+    - *poetry_template
   script:
     - poetry run black --check --diff shape_dvaults_etl
 # check terraform file quality
@@ -57,6 +61,7 @@ terraform:
   only:
     - master
     - auto-merge
+    - syntax-check
   stage: check
   image:
     name: hashicorp/terraform:light
@@ -75,7 +80,7 @@ terraform_unit_test:
     - auto-merge
     - unit-test
   image: python:3.6.2
-  stage: test
+  stage: unit-tests
   before_script:
     - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
     - *terraform_install_template
@@ -89,13 +94,14 @@ terraform_unit_test:
     - python -m unittest check_terraform_plan.py
 # run python unit tests
 python_unit_test:
-  <<: *poetry_template
   only:
     - master
     - auto-merge
     - unit-test
   image: python:3.6.2
-  stage: test
+  stage: unit-tests
+  before_script:
+    - *poetry_template
   script:
     - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
     - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
@@ -106,32 +112,53 @@ python_unit_test:
 
 # run end-to-end tests
 e2e_test:
-  <<: *poetry_template
-  - *terraform_install_template
-only:
-  - master
-  - auto-merge
-  - e2e-test
-image: python:3.6.2
-stage: test
-script:
-  - cd deployments
-  - terraform init
-  - terraform workspace select dev || terraform workspace new dev
-  - terraform apply --auto-approve
-  - cd ../test/end_to_end_tests
-  - python run_e2e_test.py
-after_script:
-  - cd deployments
-  - terraform destroy --auto-approve
+  only:
+    - master
+    - auto-merge
+    - e2e-test
+  image: python:3.6.2
+  stage: integration-tests
+  before_script:
+    # - *poetry_template
+    # - *terraform_install_template
+    - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
+    - wget "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -O /tmp/tf.zip
+    - unzip /tmp/tf.zip -d /tmp
+    - mv /tmp/terraform /usr/local/bin/terraform
+    - export CONFIG_CACHE_DURATION=0.5
+    - export POETRY_VERSION=1.1.11
+    - export POETRY_HOME=./poetry
+    - export PATH=$PATH:./poetry/bin
+    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - poetry debug info
+    - poetry config --list
+    - poetry run pip install --upgrade pip
+    - poetry install -n -v
+  script:
+    - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
+    - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
+    - aws configure set region "$AWS_DEFAULT_REGION"
+    - aws configure set aws_profile "default"
+    - aws configure set AWS_DEFAULT_PROFILE "default"
+    - cd deployments
+    - terraform init
+    - terraform workspace select dev || terraform workspace new dev
+    - terraform apply --auto-approve
+    - cd ../test/end_to_end_tests
+    - python run_e2e_test.py
+  after_script:
+    - cd deployments
+    - terraform destroy --auto-approve
 
 # generates sphinx documentation and upload it to the docs bucket
 sphinx_doc:
-  <<: *poetry_template
   only:
     - master
     - sphinx-doc
   stage: doc
+  before_script:
+    - *poetry_template
   script:
-    - poetry install -n -v
     - sphinx-build -b html docs .sphinx_build
