@@ -1,7 +1,7 @@
 # region MAIN_SETTINGS
 
 default:
-  # image: amazon/aws-glue-libs:glue_libs_1.0.0_image_01
+  image: test-glueetl
 
   tags:
     - ai-runner-pool
@@ -24,23 +24,12 @@ variables:
 # region TEMPLATES
 
 .poetry_template: &poetry_template
-  - export CONFIG_CACHE_DURATION=0.5
-  - export POETRY_VERSION=1.1.11
-  - export POETRY_HOME=./poetry
-  - export PATH=$PATH:./poetry/bin
-  - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
   - python -m venv .venv
   - source .venv/bin/activate
   - poetry debug info
   - poetry config --list
   - poetry run pip install --upgrade pip
   - poetry install -n -v
-
-# template to install terraform binaries
-.terraform_install_template: &terraform_install_template
-  - wget "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -O /tmp/tf.zip
-  - unzip /tmp/tf.zip -d /tmp
-  - mv /tmp/terraform /usr/local/bin/terraform
 
 # endregion TEMPLATES
 
@@ -50,12 +39,13 @@ black:
     - master
     - auto-merge
     - syntax-check
-  image: python:3.6.2
+  # image: python:3.6.2
   stage: check
   before_script:
     - *poetry_template
   script:
     - poetry run black --check --diff shape_dvaults_etl
+
 # check terraform file quality
 terraform:
   only:
@@ -63,9 +53,9 @@ terraform:
     - auto-merge
     - syntax-check
   stage: check
-  image:
-    name: hashicorp/terraform:light
-    entrypoint: [""]
+  # image:
+  #   name: hashicorp/terraform:light
+  #   entrypoint: [""]
   script:
     - cd deployments
     - terraform init
@@ -79,11 +69,11 @@ terraform_unit_test:
     - master
     - auto-merge
     - unit-test
-  image: python:3.6.2
+  # image: python:3.6.2
   stage: unit-tests
-  before_script:
-    - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
-    - *terraform_install_template
+  # before_script:
+  #   - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
+  #   - *terraform_install_template
   script:
     - cd deployments
     - terraform init
@@ -92,13 +82,14 @@ terraform_unit_test:
     - terraform show -json plan.out > plan.json
     - cd ../test/unit_tests
     - python -m unittest check_terraform_plan.py
+
 # run python unit tests
 python_unit_test:
   only:
     - master
     - auto-merge
     - unit-test
-  image: python:3.6.2
+  # image: python:3.6.2
   stage: unit-tests
   before_script:
     - *poetry_template
@@ -116,20 +107,9 @@ e2e_test:
     - master
     - auto-merge
     - e2e-test
-  image: python:3.6.2
+  # image: python:3.6.2
   stage: integration-tests
   before_script:
-    # - *poetry_template
-    # - *terraform_install_template
-    - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
-    - wget "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" -O /tmp/tf.zip
-    - unzip /tmp/tf.zip -d /tmp
-    - mv /tmp/terraform /usr/local/bin/terraform
-    - export CONFIG_CACHE_DURATION=0.5
-    - export POETRY_VERSION=1.1.11
-    - export POETRY_HOME=./poetry
-    - export PATH=$PATH:./poetry/bin
-    - curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
     - python -m venv .venv
     - source .venv/bin/activate
     - poetry debug info

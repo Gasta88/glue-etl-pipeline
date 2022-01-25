@@ -119,6 +119,7 @@ def main():
         for fname, tpl in test_res.items():
             if not tpl[0]:
                 print(f"{fname} has failed: {tpl[1]}")
+                sys.exit(1)
     else:
         print("Wrong status to finish the workflow.")
         sys.exit(1)
