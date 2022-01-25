@@ -1,7 +1,7 @@
 # region MAIN_SETTINGS
 
 default:
-  image: test-glueetl
+  image: 228718274899.dkr.ecr.us-east-1.amazonaws.com/docebo-ai/python-3.6-glueetl:latest
 
   tags:
     - ai-runner-pool
@@ -39,10 +39,16 @@ black:
     - master
     - auto-merge
     - syntax-check
-  # image: python:3.6.2
+  image: 228718274899.dkr.ecr.us-east-1.amazonaws.com/docebo-ai/python-3.6-glueetl:latest
   stage: check
   before_script:
-    - *poetry_template
+    # - *poetry_template
+    - python -m venv .venv
+    - source .venv/bin/activate
+    - poetry debug info
+    - poetry config --list
+    - poetry run pip install --upgrade pip
+    - poetry install -n -v
   script:
     - poetry run black --check --diff shape_dvaults_etl
 
