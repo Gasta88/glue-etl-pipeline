@@ -39,7 +39,6 @@ black:
     - master
     - auto-merge
     - syntax-check
-  image: 228718274899.dkr.ecr.us-east-1.amazonaws.com/docebo-ai/python-3.6-glueetl:latest
   stage: check
   before_script:
     # - *poetry_template
@@ -59,9 +58,6 @@ terraform:
     - auto-merge
     - syntax-check
   stage: check
-  # image:
-  #   name: hashicorp/terraform:light
-  #   entrypoint: [""]
   script:
     - cd deployments
     - terraform init
@@ -75,11 +71,7 @@ terraform_unit_test:
     - master
     - auto-merge
     - unit-test
-  # image: python:3.6.2
   stage: unit-tests
-  # before_script:
-  #   - apt-get -y update && apt-get -y autoremove && apt-get clean && apt-get install -y unzip
-  #   - *terraform_install_template
   script:
     - cd deployments
     - terraform init
@@ -95,7 +87,6 @@ python_unit_test:
     - master
     - auto-merge
     - unit-test
-  # image: python:3.6.2
   stage: unit-tests
   before_script:
     - *poetry_template
@@ -113,7 +104,6 @@ e2e_test:
     - master
     - auto-merge
     - e2e-test
-  # image: python:3.6.2
   stage: integration-tests
   before_script:
     - python -m venv .venv
