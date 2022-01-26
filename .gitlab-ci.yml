@@ -41,13 +41,7 @@ black:
     - syntax-check
   stage: check
   before_script:
-    # - *poetry_template
-    - python -m venv .venv
-    - source .venv/bin/activate
-    - poetry debug info
-    - poetry config --list
-    - poetry run pip install --upgrade pip
-    - poetry install -n -v
+    - *poetry_template
   script:
     - poetry run black --check --diff shape_dvaults_etl
 
@@ -106,12 +100,7 @@ e2e_test:
     - e2e-test
   stage: integration-tests
   before_script:
-    - python -m venv .venv
-    - source .venv/bin/activate
-    - poetry debug info
-    - poetry config --list
-    - poetry run pip install --upgrade pip
-    - poetry install -n -v
+    - *poetry_template
   script:
     - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
     - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
