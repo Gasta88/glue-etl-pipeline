@@ -40,7 +40,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
         """Test shape_dvaults_etl.glue_workflow_jobs.convert_to_parquet.create_parquet method."""
         for table_name in self.table_names:
             parquet_filename = f"{self.dest_folder}/{table_name}.parquet"
-            create_parquet(self.spark, table_name, parquet_filename)
+            create_parquet(
+                self.spark, table_name, parquet_filename, TEST_DATA_DIR, self.ALL_JSONS
+            )
             df = self.spark.read.parquet(parquet_filename)
             self.assertTrue(len(df.columns) > 0)
             self.asserTrue(df.count() > 0)
