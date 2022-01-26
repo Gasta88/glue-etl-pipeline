@@ -24,6 +24,7 @@ variables:
 # region TEMPLATES
 
 .poetry_template: &poetry_template
+  - export PATH=$PATH:../../../root/poetry/bin
   - python -m venv .venv
   - source .venv/bin/activate
   - poetry debug info
@@ -41,7 +42,6 @@ black:
     - syntax-check
   stage: check
   before_script:
-    - ls ../../../root
     - *poetry_template
   script:
     - poetry run black --check --diff shape_dvaults_etl
