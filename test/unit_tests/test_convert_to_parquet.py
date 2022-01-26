@@ -5,7 +5,7 @@ from shape_dvaults_etl.convert_to_parquet import create_parquet
 import os
 import shutil
 
-TEST_DATA_DIR = "test/data/convert_to_parquet"
+TEST_DATA_DIR = "test/unit_tests/data/convert_to_parquet"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
 
 
