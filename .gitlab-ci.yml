@@ -41,9 +41,9 @@ black:
     - syntax-check
   stage: check
   before_script:
-    - *poetry_template
     - echo $PATH
     - ls
+    - *poetry_template
   script:
     - poetry run black --check --diff shape_dvaults_etl
 
