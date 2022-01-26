@@ -4,9 +4,11 @@ import warnings
 from shape_dvaults_etl.convert_to_parquet import create_parquet
 import os
 import shutil
+import logging
 
 TEST_DATA_DIR = "test/data/convert_to_parquet"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
+logging.getLogger("boto").setLevel(logging.CRITICAL)
 
 
 class ConvertToParquetTestCase(unittest.TestCase):
