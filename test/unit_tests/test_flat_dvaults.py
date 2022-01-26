@@ -11,9 +11,12 @@ from shape_dvaults_etl.flat_dvaults import (
     _get_service_name,
 )
 import os
+import logging
 
 TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
+logging.getLogger("botocore").setLevel(logging.CRITICAL)
+logging.getLogger("boto3").setLevel(logging.CRITICAL)
 
 
 class FlatDvaultTestCase(unittest.TestCase):
