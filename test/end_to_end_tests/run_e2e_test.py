@@ -1,4 +1,3 @@
-from cgi import test
 import boto3
 import glob
 import sys
