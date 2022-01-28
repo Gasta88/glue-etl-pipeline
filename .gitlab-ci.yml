@@ -98,11 +98,6 @@ e2e_test:
   before_script:
     - *poetry_template
   script:
-    # - aws configure set aws_access_key_id "$AWS_ACCESS_KEY_ID"
-    # - aws configure set aws_secret_access_key "$AWS_SECRET_ACCESS_KEY"
-    # - aws configure set region "$AWS_REGION"
-    # - aws configure set aws_profile "default"
-    # - aws configure set AWS_DEFAULT_PROFILE "default"
     - cd deployments
     - terraform init
     - terraform workspace select dev || terraform workspace new dev
