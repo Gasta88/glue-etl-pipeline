@@ -3,7 +3,7 @@ import unittest
 import warnings
 from shape_dvaults_etl.convert_to_parquet import create_parquet
 import os
-import shutil
+import glob
 
 TEST_DATA_DIR = "test/unit_tests/data/convert_to_parquet"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
@@ -21,7 +21,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
         self.spark = SparkSession.builder.master("local").getOrCreate()
         self.spark.sparkContext.setLogLevel("FATAL")
         self.dest_folder = os.mkdir(f"{TEST_DATA_DIR}/dest")
-        self.ALL_JSONS = [f for f in os.listdir(TEST_DATA_DIR) if os.path.isfile(f)]
+        self.ALL_JSONS = [
+            f for f in glob.glob(f"{TEST_DATA_DIR}/*") if os.path.isfile(f)
+        ]
         self.table_names = [
             "HEADLINE_PRED",
             "HEADLINE_EVENT",
@@ -33,7 +35,6 @@ class ConvertToParquetTestCase(unittest.TestCase):
 
     def tearDown(self):
         """Remove test settings."""
-        shutil.rmtree(self.dest_folder)
         self.spark.stop()
 
     def test_create_parquet(self):
