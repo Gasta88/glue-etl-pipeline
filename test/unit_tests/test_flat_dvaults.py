@@ -17,6 +17,7 @@ TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
 logging.getLogger("botocore").setLevel(logging.CRITICAL)
 logging.getLogger("boto3").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 
 class FlatDvaultTestCase(unittest.TestCase):

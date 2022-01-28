@@ -76,7 +76,7 @@ def create_parquet(spark, table_name, dest_filename, landing_bucketname, all_jso
         for f in all_jsons
         if ((service_name in f) and (table_type.lower() in f))
     ]
-    if file_names is not []:
+    if len(file_names) > 0:
         logger.info(f'Converting: {"; ".join(file_names)}')
         df = spark.read.json(file_names)
         df.write.format("parquet").mode("append").save(dest_filename)
