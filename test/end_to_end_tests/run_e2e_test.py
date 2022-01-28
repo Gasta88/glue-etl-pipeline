@@ -84,7 +84,7 @@ def compare_files(landing_bucketname, expected_parquet_files):
             msg = "The final Parquet file is empty"
             results[parquet_name] = (test_flag, msg)
             continue
-        test_flag = expected_table.equals(final_table)
+        test_flag = expected_table.shape == final_table.shape
         if test_flag == False:
             results[parquet_name] = (test_flag, "Parquet files are not equals.")
         else:
