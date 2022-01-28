@@ -107,14 +107,3 @@ e2e_test:
   after_script:
     - cd deployments
     - terraform destroy --auto-approve
-
-# generates sphinx documentation and upload it to the docs bucket
-sphinx_doc:
-  only:
-    - master
-    - sphinx-doc
-  stage: doc
-  before_script:
-    - *poetry_template
-  script:
-    - sphinx-build -b html docs .sphinx_build
