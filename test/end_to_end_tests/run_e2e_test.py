@@ -29,7 +29,7 @@ def start_workflow(workflow_name):
     :param workflow_name: name of the Glue workflow.
     :return run_id: workflow run id.
     """
-    glue = boto3.client("glue")
+    glue = boto3.client("glue", region_name="us-east-1")
     try:
         response = glue.start_workflow_run(Name=workflow_name)
         return response["RunId"]
@@ -47,7 +47,7 @@ def get_workflow_status(workflow_name, run_id):
     :param run_id: id of the Glue workflow run.
     :return status: current status of the workflow run.
     """
-    glue = boto3.client("glue")
+    glue = boto3.client("glue", region_name="us-east-1")
     try:
         response = glue.get_workflow_run(Name=workflow_name, RunId=run_id)
         return response["Run"]["Status"]
