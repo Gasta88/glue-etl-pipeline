@@ -86,7 +86,10 @@ def compare_files(landing_bucketname, expected_parquet_files):
             continue
         test_flag = expected_table.shape == final_table.shape
         if test_flag == False:
-            results[parquet_name] = (test_flag, "Parquet files are not equals.")
+            results[parquet_name] = (
+                test_flag,
+                f"Parquet files are not equals. Expected table is {expected_table.shape}, final table is {final_table.shape}",
+            )
         else:
             results[parquet_name] = (test_flag, msg)
     return results
