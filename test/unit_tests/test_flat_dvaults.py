@@ -11,9 +11,13 @@ from shape_dvaults_etl.flat_dvaults import (
     _get_service_name,
 )
 import os
+import logging
 
-TEST_DATA_DIR = "test/data/flat_dvaults"
+TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
 MEDIA_BUCKETNAME = "shape-media-library-staging"
+logging.getLogger("botocore").setLevel(logging.CRITICAL)
+logging.getLogger("boto3").setLevel(logging.CRITICAL)
+logging.getLogger("urllib3").setLevel(logging.CRITICAL)
 
 
 class FlatDvaultTestCase(unittest.TestCase):
@@ -25,13 +29,14 @@ class FlatDvaultTestCase(unittest.TestCase):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        session = boto3.Session(profile_name="default")
-        s3 = session.resource(
-            "s3",
-            region_name="us-east-1",
-            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", None),
-            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", None),
-        )
+        # session = boto3.Session(profile_name="default")
+        # s3 = session.resource(
+        #     "s3",
+        #     region_name="us-east-1",
+        #     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", None),
+        #     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", None),
+        # )
+        s3 = boto3.resource("s3")
         self.media_bucketname = MEDIA_BUCKETNAME
         media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
         self.all_medias = [obj.key for obj in list(media_bucket.objects.all())]

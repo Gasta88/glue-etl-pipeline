@@ -66,17 +66,17 @@ def create_parquet(spark, table_name, dest_filename, landing_bucketname, all_jso
     :param table_name: name of the Athena table to refer.
     :param dest_filename: name final Parquet file.
     :landing_bucketname: name of the S3 bucket wehre to store parquet files.
-    :all_jsons: array of flat JSON files generated fromthe ETL pipeline so far.
+    :all_jsons: array of flat JSON files generated from the ETL pipeline so far.
     """
     service_name = table_name.split("_")[0]
     table_type = table_name.split("_")[1]
     logger.info(f"Processing {table_type} for service {service_name}.")
     file_names = [
-        f"s3://{landing_bucketname}/{f}"
+        f"{landing_bucketname}/{f}"
         for f in all_jsons
         if ((service_name in f) and (table_type.lower() in f))
     ]
-    if file_names is not []:
+    if len(file_names) > 0:
         logger.info(f'Converting: {"; ".join(file_names)}')
         df = spark.read.json(file_names)
         df.write.format("parquet").mode("append").save(dest_filename)
@@ -96,7 +96,7 @@ def main():
             run_props["SPARK"],
             table_name,
             parquet_filename,
-            run_props["LANDING_BUCKETNAME"],
+            f's3://{run_props["LANDING_BUCKETNAME"]}',
             run_props["ALL_JSONS"],
         )
 

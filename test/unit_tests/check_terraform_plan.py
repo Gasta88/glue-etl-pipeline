@@ -8,7 +8,7 @@ class CheckTerraformPlan(unittest.TestCase):
     maxDiff = None
 
     def setUp(self):
-        with open("../deployments/plan.json") as f:
+        with open("../../deployments/plan.json") as f:
             self.plan = json.load(f)
 
     def test_landing_bucket(self):
@@ -29,7 +29,7 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_s3_bucket_object"
         }
-        self.assertEqual(len(prefixes), 7)
+        self.assertEqual(len(prefixes), 8)
 
         data_profiler_prefix = prefixes.get(
             "aws_s3_bucket_object.data-profiler-logs-folder", None

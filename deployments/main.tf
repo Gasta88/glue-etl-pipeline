@@ -146,9 +146,7 @@ resource "aws_glue_trigger" "prejob-trigger" {
   actions {
     job_name = aws_glue_job.pre-job.name
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_job" "pre-job" {
@@ -188,9 +186,7 @@ resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
@@ -207,9 +203,7 @@ resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
       state    = "FAILED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_job" "profile-dvault-job" {
@@ -250,9 +244,7 @@ resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
@@ -269,9 +261,7 @@ resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
       state    = "FAILED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_job" "flat-dvault-job" {
@@ -334,9 +324,7 @@ resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
@@ -353,9 +341,7 @@ resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
       state    = "FAILED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_job" "convert-to-parquet-job" {
@@ -395,9 +381,7 @@ resource "aws_glue_trigger" "dvault-parquet-crawler-pass-trigger" {
       state    = "SUCCEEDED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_trigger" "dvault-parquet-crawler-fail-trigger" {
@@ -414,9 +398,7 @@ resource "aws_glue_trigger" "dvault-parquet-crawler-fail-trigger" {
       state    = "FAILED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_crawler" "dvault-parquet-crawler" {
@@ -445,9 +427,7 @@ resource "aws_glue_trigger" "postjob-pass-trigger" {
       crawl_state  = "SUCCEEDED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 resource "aws_glue_trigger" "postjob-fail-trigger" {
@@ -464,9 +444,7 @@ resource "aws_glue_trigger" "postjob-fail-trigger" {
       crawl_state  = "FAILED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
 
 
@@ -508,7 +486,5 @@ resource "aws_glue_trigger" "cleanupjob-trigger" {
       state    = "SUCCEEDED"
     }
   }
-  depends_on = [
-    aws_glue_workflow.dvault-glue-workflow
-  ]
+
 }
