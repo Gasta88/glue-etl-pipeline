@@ -56,11 +56,11 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
   etag     = filemd5("../dependencies/${each.value}")
 }
 
-resource "aws_s3_bucket_object" "data-profiler-logs-folder" {
-  bucket = aws_s3_bucket.dvault-bucket.bucket
-  acl    = "private"
-  key    = "data-profile-logs/"
-}
+# resource "aws_s3_bucket_object" "data-profiler-logs-folder" {
+#   bucket = aws_s3_bucket.dvault-bucket.bucket
+#   acl    = "private"
+#   key    = "data-profile-logs/"
+# }
 
 #--------------------------- AWS Glue resources
 
