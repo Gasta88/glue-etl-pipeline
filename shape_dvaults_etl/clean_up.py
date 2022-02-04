@@ -50,6 +50,12 @@ def main():
         s3.Object(run_props["BUCKET_NAME"], key).delete()
     logger.info("data/flat_jsons/ prefix clean-up is complete.")
 
+    for key in [
+        obj.key for obj in list(bucket.objects.filter(Prefix="data/clean_dvaults"))
+    ]:
+        s3.Object(run_props["BUCKET_NAME"], key).delete()
+    logger.info("data/clean_dvaults/ prefix clean-up is complete.")
+
     logger.info("Finishing environment clean-up.")
 
 

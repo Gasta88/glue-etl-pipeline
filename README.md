@@ -58,9 +58,27 @@ The tables are hosted onto the Glue Data Catalog and populated by the Glue Crawl
 
 At the current state, the project is tested via CI/CD pipeline in Gitlab. Tests are allocated in _test/_ folder.
 
-Two components are tested:
+Two types of tests are run:
 
+- Unit tests.
+- End-to-end tests.
+
+### Unit testing:
+
+The unit testing of the project occurs at two levels:
+
+- Terraform plan output.
 - Glue Job scripts.
-- Terraform deployment via plan inspection.
 
-## Deploy the pipeline on AWS
+Inside the CI/CD pipeline, on can use the command `./push_tags.sh unit-test` to run just these type of tests inside the project.
+
+### End to end testing:
+
+The E2E testing performed inside the project comprise a dev depoyment of the infrastructure in AWS, along with a helping script located in _test/end_to_end_tests/run_e2e_test.py_ to perform these actions:
+
+- Upload testing input from _test/end_to_end_tests/data/input_ into AWS.
+- Start Glue workflow via boto3.
+- Wait until the workflow has processed the files.
+- Compare content of final Parquet files with expected results in _test/end_to_end_tests/data/expected_.
+
+If final and expected files are different in their own content, the job fails.

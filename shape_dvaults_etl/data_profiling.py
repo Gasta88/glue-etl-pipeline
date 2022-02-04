@@ -297,22 +297,25 @@ def main():
             for event in events_arr:
                 service_name, service_type = _get_service_name_and_type(event)
                 profile_flag, errors = run_data_profiling(event, service_type)
-                info = {
-                    "filename": tmp_filename,
-                    "dvault_id": event["id"],
-                    "dvault_type": service_type,
-                    "dvault_service": service_name,
-                    "pass_profiling": profile_flag,
-                    "errors": errors,
-                }
                 if (service_name is None) or not (profile_flag):
                     dirty_dvaults.append(json.dumps(event))
+                    info_msg = (
+                        f"PROFILER - "
+                        f'EventId:{event["id"]}|'
+                        f"HasPassed:{profile_flag}|"
+                        f"DvaultFile:{file_name}|"
+                        f"ServiceName:{service_name}|"
+                        f"ServiceType:{service_type}|"
+                        f"Errors:{json.dumps(errors)}"
+                    )
+                    logger.info(info_msg)
                 else:
                     clean_dvaults.append(json.dumps(event))
         except Exception as e:
             logger.error(
                 "Something wrong with extraction of dvaults from file. Process stopped."
             )
+            logger.error(e)
             sys.exit(1)
         save_dvaults(
             clean_dvaults,
