@@ -31,10 +31,6 @@ class CheckTerraformPlan(unittest.TestCase):
         }
         self.assertEqual(len(prefixes), 7)
 
-        data_profiler_prefix = prefixes.get(
-            "aws_s3_bucket_object.data-profiler-logs-folder", None
-        )
-        self.assertIsNotNone(data_profiler_prefix)
         # add more tests if more prefixes are created
 
     def test_glue_ecosystem(self):
