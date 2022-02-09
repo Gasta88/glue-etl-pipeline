@@ -482,3 +482,43 @@ resource "aws_glue_trigger" "cleanupjob-trigger" {
   }
 
 }
+
+resource "aws_glue_trigger" "eslogsjob-trigger" {
+  name          = "dvault-eslogs-job-trigger-${terraform.workspace}"
+  type          = "CONDITIONAL"
+  workflow_name = aws_glue_workflow.dvault-glue-workflow.name
+
+  actions {
+    job_name = aws_glue_job.eslogs-job.name
+  }
+  predicate {
+    conditions {
+      job_name = aws_glue_job.post-job.name
+      state    = "SUCCEEDED"
+    }
+  }
+
+}
+
+resource "aws_glue_job" "eslogs-job" {
+  name         = "dvault-eslogs-job-${terraform.workspace}"
+  description  = "Glue job that send logs to ElasticSearch"
+  glue_version = "1.0"
+  role_arn     = aws_iam_role.glue-role.arn
+  max_capacity = 0.0625
+
+  command {
+    name            = "pythonshell"
+    python_version  = 3
+    script_location = "s3://${aws_s3_bucket.dvault-bucket.bucket}/scripts/process_logs.py"
+  }
+
+  default_arguments = {
+    "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
+    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
+    "--enable-continuous-cloudwatch-log" = "true",
+    "--enable-continuous-log-filter"     = "true",
+    "--enable-metrics"                   = ""
+  }
+  timeout = 15
+}

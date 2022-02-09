@@ -1,13 +1,13 @@
 [[package]]
 name = "awscli"
-version = "1.22.45"
+version = "1.22.51"
 description = "Universal Command Line Environment for AWS."
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = "1.23.45"
+botocore = "1.23.51"
 colorama = ">=0.2.5,<0.4.4"
 docutils = ">=0.10,<0.16"
 PyYAML = ">=3.10,<5.5"
@@ -44,14 +44,14 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.20.45"
+version = "1.20.51"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = ">=1.23.45,<1.24.0"
+botocore = ">=1.23.51,<1.24.0"
 jmespath = ">=0.7.1,<1.0.0"
 s3transfer = ">=0.5.0,<0.6.0"
 
@@ -60,7 +60,7 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.23.45"
+version = "1.23.51"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
@@ -81,6 +81,14 @@ description = "Lightweight, extensible schema and data validation tool for Pytho
 category = "main"
 optional = false
 python-versions = ">=2.7"
+
+[[package]]
+name = "certifi"
+version = "2021.10.8"
+description = "Python package for providing Mozilla's CA Bundle."
+category = "main"
+optional = false
+python-versions = "*"
 
 [[package]]
 name = "click"
@@ -117,6 +125,24 @@ description = "Docutils -- Python Documentation Utilities"
 category = "main"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
+
+[[package]]
+name = "elasticsearch"
+version = "7.17.0"
+description = "Python client for Elasticsearch"
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, <4"
+
+[package.dependencies]
+certifi = "*"
+urllib3 = ">=1.21.1,<2"
+
+[package.extras]
+async = ["aiohttp (>=3,<4)"]
+develop = ["requests (>=2.0.0,<3.0.0)", "coverage", "mock", "pyyaml", "pytest", "pytest-cov", "sphinx (<1.7)", "sphinx-rtd-theme", "black", "jinja2"]
+docs = ["sphinx (<1.7)", "sphinx-rtd-theme"]
+requests = ["requests (>=2.4.0,<3.0.0)"]
 
 [[package]]
 name = "importlib-metadata"
@@ -262,7 +288,7 @@ pyasn1 = ">=0.1.3"
 
 [[package]]
 name = "s3transfer"
-version = "0.5.0"
+version = "0.5.1"
 description = "An Amazon S3 Transfer Manager"
 category = "main"
 optional = false
@@ -334,28 +360,32 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.2"
-content-hash = "6f69010c8b698bedc7a08d95e75f9b07f451fcc72840c9832cd8167565fd9654"
+content-hash = "3138a242215b20d9782229d76ce436a7de7df769ab6527108d83d7cee34239ea"
 
 [metadata.files]
 awscli = [
-    {file = "awscli-1.22.45-py3-none-any.whl", hash = "sha256:4da9430559db13bdde4d4d9f9b473153cb7ea2bdaf18ac226e1e266ee19f72d2"},
-    {file = "awscli-1.22.45.tar.gz", hash = "sha256:8a2e30068c9aac7525e05e6e05b2c110625c58609ed51d2ff20b21d5e12a6b1b"},
+    {file = "awscli-1.22.51-py3-none-any.whl", hash = "sha256:eadaa662cf34d43123cee252e21ab0cc7a160316ddfb107ad3d3c8cc1d1f722d"},
+    {file = "awscli-1.22.51.tar.gz", hash = "sha256:fb0631f46e163f4d0f88c496554df1ea748adb9cc5d616ccff2e89a1daaddd75"},
 ]
 black = [
     {file = "black-21.12b0-py3-none-any.whl", hash = "sha256:a615e69ae185e08fdd73e4715e260e2479c861b5740057fde6e8b4e3b7dd589f"},
     {file = "black-21.12b0.tar.gz", hash = "sha256:77b80f693a569e2e527958459634f18df9b0ba2625ba4e0c2d5da5be42e6f2b3"},
 ]
 boto3 = [
-    {file = "boto3-1.20.45-py3-none-any.whl", hash = "sha256:2ea0e0aa1494ef87a342260da8d9381000d774e73d83ee3d7c2906fefcbe2c32"},
-    {file = "boto3-1.20.45.tar.gz", hash = "sha256:3d9cb5edeff09598b7065abe5b42affb0b6e1c0c805ab57c051d0f3592a0f02b"},
+    {file = "boto3-1.20.51-py3-none-any.whl", hash = "sha256:6b1e78ac44956adb3909da2194ad8397da0fde615ba3029648663b18f2b776fd"},
+    {file = "boto3-1.20.51.tar.gz", hash = "sha256:f26f7285780bda16c6ffb8db76c949aeeb45730d3f68626e31b90246ec00fe1a"},
 ]
 botocore = [
-    {file = "botocore-1.23.45-py3-none-any.whl", hash = "sha256:793a0a4b572bfb157ba17971e4d783766f59c5a0f117407bbeefeb577efa1ed1"},
-    {file = "botocore-1.23.45.tar.gz", hash = "sha256:782323846dad22ea814a64bd64b89c7f04550812d3945ce77748b2bac6fe745b"},
+    {file = "botocore-1.23.51-py3-none-any.whl", hash = "sha256:372428fb18ba813431b2301c9306b97c0bc0a888127725b427f227734e370c7e"},
+    {file = "botocore-1.23.51.tar.gz", hash = "sha256:f715fba22d1d2ecf995d3168ddd9adca63979a6cddd35534ccc8550c690f1c88"},
 ]
 cerberus = [
     {file = "Cerberus-1.3.3-py3-none-any.whl", hash = "sha256:7aff49bc793e58a88ac14bffc3eca0f67e077881d3c62c621679a621294dd174"},
     {file = "Cerberus-1.3.3.tar.gz", hash = "sha256:eec10585c33044fb7c69650bc5b68018dac0443753337e2b07684ee0f3c83329"},
+]
+certifi = [
+    {file = "certifi-2021.10.8-py2.py3-none-any.whl", hash = "sha256:d62a0163eb4c2344ac042ab2bdf75399a71a2d8c7d47eac2e2ee91b9d6339569"},
+    {file = "certifi-2021.10.8.tar.gz", hash = "sha256:78884e7c1d4b00ce3cea67b44566851c4343c120abd683433ce934a68ea58872"},
 ]
 click = [
     {file = "click-8.0.3-py3-none-any.whl", hash = "sha256:353f466495adaeb40b6b5f592f9f91cb22372351c84caeb068132442a4518ef3"},
@@ -373,6 +403,10 @@ docutils = [
     {file = "docutils-0.15.2-py2-none-any.whl", hash = "sha256:9e4d7ecfc600058e07ba661411a2b7de2fd0fafa17d1a7f7361cd47b1175c827"},
     {file = "docutils-0.15.2-py3-none-any.whl", hash = "sha256:6c4f696463b79f1fb8ba0c594b63840ebd41f059e92b31957c46b74a4599b6d0"},
     {file = "docutils-0.15.2.tar.gz", hash = "sha256:a2aeea129088da402665e92e0b25b04b073c04b2dce4ab65caaa38b7ce2e1a99"},
+]
+elasticsearch = [
+    {file = "elasticsearch-7.17.0-py2.py3-none-any.whl", hash = "sha256:ccbf3d1651eb79798a55c1e84b8be850db3873f0329e74086a2cfba37e8c288c"},
+    {file = "elasticsearch-7.17.0.tar.gz", hash = "sha256:406013783cc36af28ea36cd58cf184cd646530e47eea41336b386322fb878b59"},
 ]
 importlib-metadata = [
     {file = "importlib_metadata-4.8.3-py3-none-any.whl", hash = "sha256:65a9576a5b2d58ca44d133c42a241905cc45e34d2c06fd5ba2bafa221e5d7b5e"},
@@ -534,8 +568,8 @@ rsa = [
     {file = "rsa-4.7.2.tar.gz", hash = "sha256:9d689e6ca1b3038bc82bf8d23e944b6b6037bc02301a574935b2dd946e0353b9"},
 ]
 s3transfer = [
-    {file = "s3transfer-0.5.0-py3-none-any.whl", hash = "sha256:9c1dc369814391a6bda20ebbf4b70a0f34630592c9aa520856bf384916af2803"},
-    {file = "s3transfer-0.5.0.tar.gz", hash = "sha256:50ed823e1dc5868ad40c8dc92072f757aa0e653a192845c94a3b676f4a62da4c"},
+    {file = "s3transfer-0.5.1-py3-none-any.whl", hash = "sha256:25c140f5c66aa79e1ac60be50dcd45ddc59e83895f062a3aab263b870102911f"},
+    {file = "s3transfer-0.5.1.tar.gz", hash = "sha256:69d264d3e760e569b78aaa0f22c97e955891cd22e32b10c51f784eeda4d9d10a"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},

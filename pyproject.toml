@@ -13,6 +13,7 @@ boto3 = "^1.20.37"
 pyarrow = "^6.0.1"
 pypandoc = "^1.7.2"
 pyspark = "2.4.3"
+elasticsearch = "^7.17.0"
 
 [tool.poetry.dev-dependencies]
 

@@ -3,7 +3,7 @@ import sys
 import logging
 
 # Setup logger
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
