@@ -129,7 +129,13 @@ def main():
                 ]
             # arbitrary process 50 dvault files at time
             logger.info(dvault_files)
-            run_properties["dvault_files"] = ";".join(dvault_files[:50])
+            if len(dvault_files) == 0:
+                logger.info("No pending dvault files are available.")
+                response = glue.stop_workflow_run(
+                    Name=workflow_name, RunId=workflow_run_id
+                )
+            else:
+                run_properties["dvault_files"] = ";".join(dvault_files[:50])
 
     logger.info("Set new set of run_properties")
     glue.put_workflow_run_properties(
