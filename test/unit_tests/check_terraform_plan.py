@@ -101,24 +101,6 @@ class CheckTerraformPlan(unittest.TestCase):
         eslogs_trigger = triggers.get("aws_glue_trigger.eslogsjob-trigger", None)
         self.assertIsNotNone(eslogs_trigger)
 
-        crawlers = {
-            resource["address"]: resource
-            for resource in self.plan["planned_values"]["root_module"]["resources"]
-            if resource["type"] == "aws_glue_crawler"
-        }
-        dvault_crawler = crawlers.get("aws_glue_crawler.dvault-parquet-crawler", None)
-        self.assertIsNotNone(dvault_crawler)
-
-        data_catalogs = {
-            resource["address"]: resource
-            for resource in self.plan["planned_values"]["root_module"]["resources"]
-            if resource["type"] == "aws_glue_catalog_database"
-        }
-        dvault_catalog = data_catalogs.get(
-            "aws_glue_catalog_database.aws-glue-catalog-database", None
-        )
-        self.assertIsNotNone(dvault_catalog)
-
 
 if __name__ == "__main__":
     runner = unittest.TextTestRunner(verbosity=3)

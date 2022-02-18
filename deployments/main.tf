@@ -58,9 +58,6 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
 
 #--------------------------- AWS Glue resources
 
-resource "aws_glue_catalog_database" "aws-glue-catalog-database" {
-  name = "dvault_glue_shape_${terraform.workspace}"
-}
 
 resource "aws_iam_role" "glue-role" {
   name                = "glue-service-role-${terraform.workspace}"
@@ -361,51 +358,6 @@ resource "aws_glue_job" "convert-to-parquet-job" {
   timeout = 15
 }
 
-resource "aws_glue_trigger" "dvault-parquet-crawler-pass-trigger" {
-  name          = "dvault-parquet-crawler-pass-trigger-${terraform.workspace}"
-  type          = "CONDITIONAL"
-  workflow_name = aws_glue_workflow.dvault-glue-workflow.name
-
-  actions {
-    crawler_name = aws_glue_crawler.dvault-parquet-crawler.name
-  }
-  predicate {
-    conditions {
-      job_name = aws_glue_job.convert-to-parquet-job.name
-      state    = "SUCCEEDED"
-    }
-  }
-
-}
-
-resource "aws_glue_trigger" "dvault-parquet-crawler-fail-trigger" {
-  name          = "dvault-parquet-crawler-fail-trigger-${terraform.workspace}"
-  type          = "CONDITIONAL"
-  workflow_name = aws_glue_workflow.dvault-glue-workflow.name
-
-  actions {
-    job_name = aws_glue_job.clean-up-job.name
-  }
-  predicate {
-    conditions {
-      job_name = aws_glue_job.convert-to-parquet-job.name
-      state    = "FAILED"
-    }
-  }
-
-}
-
-resource "aws_glue_crawler" "dvault-parquet-crawler" {
-  database_name = aws_glue_catalog_database.aws-glue-catalog-database.name
-  name          = "parquet-clean-crawler-${terraform.workspace}"
-  description   = "Crawler for Parquet cleaned and profiled"
-  role          = aws_iam_role.glue-role.arn
-
-  s3_target {
-    path       = "s3://${aws_s3_bucket.dvault-bucket.bucket}/data/clean_parquet/"
-    exclusions = ["**_SUCCESS", "**crc", "**csv", "**metadata"]
-  }
-}
 
 resource "aws_glue_trigger" "postjob-pass-trigger" {
   name          = "dvault-post-job-pass-trigger-${terraform.workspace}"
@@ -417,8 +369,8 @@ resource "aws_glue_trigger" "postjob-pass-trigger" {
   }
   predicate {
     conditions {
-      crawler_name = aws_glue_crawler.dvault-parquet-crawler.name
-      crawl_state  = "SUCCEEDED"
+      job_name = aws_glue_job.convert-to-parquet-job.name
+      state    = "SUCCEEDED"
     }
   }
 
@@ -434,8 +386,8 @@ resource "aws_glue_trigger" "postjob-fail-trigger" {
   }
   predicate {
     conditions {
-      crawler_name = aws_glue_crawler.dvault-parquet-crawler.name
-      crawl_state  = "FAILED"
+      job_name = aws_glue_job.convert-to-parquet-job.name
+      state    = "FAILED"
     }
   }
 
