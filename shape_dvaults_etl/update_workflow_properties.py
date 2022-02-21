@@ -135,7 +135,7 @@ def main():
                     Name=workflow_name, RunId=workflow_run_id
                 )
             else:
-                run_properties["dvault_files"] = ";".join(dvault_files[:50])
+                run_properties["dvault_files"] = ";".join(dvault_files[:10])
 
     logger.info("Set new set of run_properties")
     glue.put_workflow_run_properties(

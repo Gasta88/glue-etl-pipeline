@@ -60,7 +60,7 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
 
 
 resource "aws_iam_role" "glue-role" {
-  name                = "glue-service-role-${terraform.workspace}"
+  name                = "dvault-glue-service-role-${terraform.workspace}"
   path                = "/"
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole", aws_iam_policy.s3-data-policy.arn]
   # Terraform's "jsonencode" function converts a
@@ -109,6 +109,13 @@ resource "aws_iam_policy" "s3-data-policy" {
         ]
         Effect   = "Allow"
         Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/data/*"
+      },
+      {
+        Action = [
+          "logs:GetLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/python-jobs/output:*"
       }
     ]
   })
@@ -470,7 +477,8 @@ resource "aws_glue_job" "eslogs-job" {
     "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = ""
+    "--enable-metrics"                   = "",
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/elasticsearch-7.13.0-py2.py3-none-any.whl"
   }
   timeout = 15
 }
