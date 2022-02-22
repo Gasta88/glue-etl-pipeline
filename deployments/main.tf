@@ -116,16 +116,25 @@ resource "aws_iam_policy" "s3-data-policy" {
         ]
         Effect   = "Allow"
         Resource = "arn:aws:logs:*:*:log-group:/aws-glue/python-jobs/output:*"
+      },
+      {
+        Action = [
+          "logs:DescribeLogStreams"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/python-jobs/output:*"
+      },
+      {
+        "Action" : [
+          "es:*"
+        ],
+        "Effect" : "Allow",
+        "Resource" : "arn:aws:es:*:*:domain/ai-elasticsearch-6-public/*"
       }
     ]
   })
 }
 
-
-resource "aws_cloudwatch_log_group" "dvault-glue-log-group" {
-  name              = "dvault-glue-log-group"
-  retention_in_days = 7
-}
 
 resource "aws_glue_workflow" "dvault-glue-workflow" {
   name        = "s3-batch-glue-dvault-workflow-${terraform.workspace}"
@@ -163,7 +172,6 @@ resource "aws_glue_job" "pre-job" {
   default_arguments = {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
     "--transition_state" : "STARTED",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
@@ -171,7 +179,7 @@ resource "aws_glue_job" "pre-job" {
   timeout = 15
 }
 resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
-  name          = "profile-dvault-pass-trigger-${terraform.workspace}"
+  name          = "dvault-profile-pass-trigger-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -188,7 +196,7 @@ resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
-  name          = "profile-dvault-fail-trigger-${terraform.workspace}"
+  name          = "dvault-profile-fail-trigger-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -205,7 +213,7 @@ resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
 }
 
 resource "aws_glue_job" "profile-dvault-job" {
-  name         = "profile-dvault-job-${terraform.workspace}"
+  name         = "dvault-profile-job-${terraform.workspace}"
   description  = "Glue job that profiles dvault files and split them in CLEAN and DIRTY."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -219,7 +227,6 @@ resource "aws_glue_job" "profile-dvault-job" {
 
   default_arguments = {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",
@@ -229,7 +236,7 @@ resource "aws_glue_job" "profile-dvault-job" {
 }
 
 resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
-  name          = "flat-dvault-pass-trigger-${terraform.workspace}"
+  name          = "dvault-flat-pass-trigger-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -246,7 +253,7 @@ resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
-  name          = "flat-dvault-fail-trigger-${terraform.workspace}"
+  name          = "dvault-flat-fail-trigger-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -263,7 +270,7 @@ resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
 }
 
 resource "aws_glue_job" "flat-dvault-job" {
-  name         = "flat-dvault-job-${terraform.workspace}"
+  name         = "dvault-flat-job-${terraform.workspace}"
   description  = "Glue job that explodes dvault files and split them in PREDICTIONS and EVENTS."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -277,7 +284,6 @@ resource "aws_glue_job" "flat-dvault-job" {
 
   default_arguments = {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
@@ -286,7 +292,7 @@ resource "aws_glue_job" "flat-dvault-job" {
 }
 
 resource "aws_glue_job" "clean-up-job" {
-  name         = "clean-up-job-${terraform.workspace}"
+  name         = "dvault-clean-up-job-${terraform.workspace}"
   description  = "Glue job that clean up prefixes like data/flat_dvaults/events and data/flat_dvaults/predictions."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -299,7 +305,6 @@ resource "aws_glue_job" "clean-up-job" {
   }
   default_arguments = {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
@@ -309,7 +314,7 @@ resource "aws_glue_job" "clean-up-job" {
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
-  name          = "convertion-to-parquet-pass-trigger-${terraform.workspace}"
+  name          = "dvault-convert-to-parquet-pass-trigger-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -326,7 +331,7 @@ resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
-  name          = "convertion-to-parquet-fail-trigger-${terraform.workspace}"
+  name          = "dvault-convert-to-parquet-fail-trigger-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -343,7 +348,7 @@ resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
 }
 
 resource "aws_glue_job" "convert-to-parquet-job" {
-  name              = "convert-to-parquet-job-${terraform.workspace}"
+  name              = "dvault-convert-to-parquet-job-${terraform.workspace}"
   description       = "Glue job that converts JSON to Parquet"
   glue_version      = "2.0"
   role_arn          = aws_iam_role.glue-role.arn
@@ -357,7 +362,6 @@ resource "aws_glue_job" "convert-to-parquet-job" {
   default_arguments = {
     "--job-bookmark-option" : "job-bookmark-enable",
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
@@ -417,7 +421,6 @@ resource "aws_glue_job" "post-job" {
   default_arguments = {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
     "--transition_state" : "COMPLETED",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
@@ -474,7 +477,6 @@ resource "aws_glue_job" "eslogs-job" {
 
   default_arguments = {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
-    "--continuous-log-logGroup"          = aws_cloudwatch_log_group.dvault-glue-log-group.name,
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",

@@ -23,10 +23,10 @@ def _is_workflow_run_valid(workflow_run):
     :return is_valid: whether the workflow run is valid or not.
     """
     is_valid = False
-    failed_actions = workflow_run["Statistics"]["FailedActions"]
+    succeeded_actions = workflow_run["Statistics"]["SucceededActions"]
     run_state = workflow_run["WorkflowRunProperties"].get("run_state", "STARTED")
-    # No failed jobs and workflow run has been completed.
-    if failed_actions == 0 and run_state == "COMPLETED":
+    # Workflow run has been completed and most of the jobs are succeeded (sending logs to ES is not mandatory)
+    if succeeded_actions >= 6 and run_state == "COMPLETED":
         is_valid = True
     return is_valid
 

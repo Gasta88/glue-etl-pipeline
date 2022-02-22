@@ -53,6 +53,7 @@ The tables are hosted onto the Glue Data Catalog and populated by the Glue Crawl
 
 - Make the ETL pipeline event-driven via Cloudtrail and Eventbridge.
 - Create views in Athena to export datasets for re-training effort.
+- Implement dvault life cycle to change S3 tier storage for data and optimize costs.
 
 ## Testing the pipeline
 
