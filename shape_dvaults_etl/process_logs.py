@@ -64,7 +64,7 @@ def _is_workflow_run_valid(workflow_run):
     succeeded_actions = workflow_run["Statistics"]["SucceededActions"]
     run_state = workflow_run["WorkflowRunProperties"].get("run_state", "STARTED")
     # Workflow run has been completed and most of the jobs are succeeded (sending logs to ES is not mandatory)
-    if succeeded_actions >= 6 and run_state == "COMPLETED":
+    if succeeded_actions >= 5 and run_state == "COMPLETED":
         is_valid = True
     return is_valid
 
@@ -85,15 +85,12 @@ def _extract_workflow_details(workflow_run, job_name):
     return workflow_details
 
 
-def get_valid_workflow_run(
-    workflow_name, workflow_run_id, job_name="profile-dvault-job-dev"
-):
+def get_valid_workflow_run(workflow_name, workflow_run_id):
     """
     Return all valid workflow runs from CloudWatch by iterating through pages.
 
     :param workflow_name: name of the current workflow to capture.
     :param workflow_run_id: is of the current workflow run to capture.
-    :param job_name: data profiling job name.
     :return workflow_details: details of valid Glue workflow.
     """
     glue = boto3.client("glue")

@@ -135,6 +135,17 @@ resource "aws_iam_policy" "s3-data-policy" {
   })
 }
 
+resource "aws_glue_connection" "elasticsearch" {
+  name            = "glue-connection-to-elasticsearch-${terraform.workspace}"
+  connection_type = "NETWORK"
+
+  physical_connection_requirements {
+    availability_zone      = "us-east-1a"
+    security_group_id_list = ["sg-05d5182f1bb185a78"]
+    subnet_id              = "subnet-0f6cc8f0aae21579f"
+  }
+
+}
 
 resource "aws_glue_workflow" "dvault-glue-workflow" {
   name        = "s3-batch-glue-dvault-workflow-${terraform.workspace}"
@@ -468,6 +479,7 @@ resource "aws_glue_job" "eslogs-job" {
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
   max_capacity = 0.0625
+  connections  = [aws_glue_connection.elasticsearch.name]
 
   command {
     name            = "pythonshell"
@@ -484,3 +496,5 @@ resource "aws_glue_job" "eslogs-job" {
   }
   timeout = 15
 }
+
+

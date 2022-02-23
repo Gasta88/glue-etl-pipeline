@@ -26,7 +26,7 @@ def _is_workflow_run_valid(workflow_run):
     succeeded_actions = workflow_run["Statistics"]["SucceededActions"]
     run_state = workflow_run["WorkflowRunProperties"].get("run_state", "STARTED")
     # Workflow run has been completed and most of the jobs are succeeded (sending logs to ES is not mandatory)
-    if succeeded_actions >= 6 and run_state == "COMPLETED":
+    if succeeded_actions >= 5 and run_state == "COMPLETED":
         is_valid = True
     return is_valid
 
@@ -135,7 +135,7 @@ def main():
                     Name=workflow_name, RunId=workflow_run_id
                 )
             else:
-                run_properties["dvault_files"] = ";".join(dvault_files[:10])
+                run_properties["dvault_files"] = ";".join(dvault_files[:50])
 
     logger.info("Set new set of run_properties")
     glue.put_workflow_run_properties(

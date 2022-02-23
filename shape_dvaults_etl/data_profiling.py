@@ -75,10 +75,10 @@ def run_data_profiling(event, service_type):
                 "required": True,
                 "allowed": [
                     "ADD_TAG",
-                    "SEARCH_IMAGE",
+                    "SEARCH IMAGE",
                     "PUBLISH",
                     "DELETE",
-                    "DELETE_SLIDE",
+                    "DELETE SLIDE",
                 ],
             },
         }
