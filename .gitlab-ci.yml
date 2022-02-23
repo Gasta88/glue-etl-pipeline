@@ -91,6 +91,10 @@ python_unit_test:
     - *poetry_template
   script:
     - python -m unittest discover -s test/unit_tests
+    - coverage report -m
+    - coverage-badge
+
+  coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
 
 # run end-to-end tests
 e2e_test:

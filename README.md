@@ -1,3 +1,5 @@
+[![coverage report](https://git.docebo.info/ai/shape-dvault/badges/master/coverage.svg)](https://git.docebo.info/ai/shape-dvault/commits/master)
+
 # Shape dvaults ETL pipeline
 
 ## Purpose/Goals
