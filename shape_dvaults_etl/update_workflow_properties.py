@@ -4,7 +4,7 @@ from awsglue.utils import getResolvedOptions
 import logging
 
 # Setup logger
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -23,10 +23,10 @@ def _is_workflow_run_valid(workflow_run):
     :return is_valid: whether the workflow run is valid or not.
     """
     is_valid = False
-    failed_actions = workflow_run["Statistics"]["FailedActions"]
+    succeeded_actions = workflow_run["Statistics"]["SucceededActions"]
     run_state = workflow_run["WorkflowRunProperties"].get("run_state", "STARTED")
-    # No failed jobs and workflow run has been completed.
-    if failed_actions == 0 and run_state == "COMPLETED":
+    # Workflow run has been completed and most of the jobs are succeeded (sending logs to ES is not mandatory)
+    if succeeded_actions >= 5 and run_state == "COMPLETED":
         is_valid = True
     return is_valid
 
@@ -129,7 +129,13 @@ def main():
                 ]
             # arbitrary process 50 dvault files at time
             logger.info(dvault_files)
-            run_properties["dvault_files"] = ";".join(dvault_files[:50])
+            if len(dvault_files) == 0:
+                logger.info("No pending dvault files are available.")
+                response = glue.stop_workflow_run(
+                    Name=workflow_name, RunId=workflow_run_id
+                )
+            else:
+                run_properties["dvault_files"] = ";".join(dvault_files[:50])
 
     logger.info("Set new set of run_properties")
     glue.put_workflow_run_properties(

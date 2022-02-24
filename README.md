@@ -1,3 +1,5 @@
+[![coverage report](https://git.docebo.info/ai/shape-dvault/badges/master/coverage.svg)](https://git.docebo.info/ai/shape-dvault/commits/master)
+
 # Shape dvaults ETL pipeline
 
 ## Purpose/Goals
@@ -53,6 +55,7 @@ The tables are hosted onto the Glue Data Catalog and populated by the Glue Crawl
 
 - Make the ETL pipeline event-driven via Cloudtrail and Eventbridge.
 - Create views in Athena to export datasets for re-training effort.
+- Implement dvault life cycle to change S3 tier storage for data and optimize costs.
 
 ## Testing the pipeline
 

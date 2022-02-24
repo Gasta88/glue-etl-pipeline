@@ -29,7 +29,7 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_s3_bucket_object"
         }
-        self.assertEqual(len(prefixes), 7)
+        self.assertEqual(len(prefixes), 9)
 
         # add more tests if more prefixes are created
 
@@ -48,18 +48,20 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_glue_job"
         }
-        pre_job = jobs.get("aws_glue_job.pre-job")
+        pre_job = jobs.get("aws_glue_job.pre-job", None)
         self.assertIsNotNone(pre_job)
-        profile_job = jobs.get("aws_glue_job.profile-dvault-job")
+        profile_job = jobs.get("aws_glue_job.profile-dvault-job", None)
         self.assertIsNotNone(profile_job)
-        flat_job = jobs.get("aws_glue_job.flat-dvault-job")
+        flat_job = jobs.get("aws_glue_job.flat-dvault-job", None)
         self.assertIsNotNone(flat_job)
-        convert_job = jobs.get("aws_glue_job.convert-to-parquet-job")
+        convert_job = jobs.get("aws_glue_job.convert-to-parquet-job", None)
         self.assertIsNotNone(convert_job)
-        post_job = jobs.get("aws_glue_job.post-job")
+        post_job = jobs.get("aws_glue_job.post-job", None)
         self.assertIsNotNone(post_job)
-        clean_job = jobs.get("aws_glue_job.clean-up-job")
+        clean_job = jobs.get("aws_glue_job.clean-up-job", None)
         self.assertIsNotNone(clean_job)
+        eslogs_job = jobs.get("aws_glue_job.eslogs-job", None)
+        self.assertIsNotNone(eslogs_job)
 
         triggers = {
             resource["address"]: resource
@@ -96,24 +98,8 @@ class CheckTerraformPlan(unittest.TestCase):
         self.assertIsNotNone(post_pass_trigger)
         post_fail_trigger = triggers.get("aws_glue_trigger.postjob-fail-trigger", None)
         self.assertIsNotNone(post_fail_trigger)
-
-        crawlers = {
-            resource["address"]: resource
-            for resource in self.plan["planned_values"]["root_module"]["resources"]
-            if resource["type"] == "aws_glue_crawler"
-        }
-        dvault_crawler = crawlers.get("aws_glue_crawler.dvault-parquet-crawler", None)
-        self.assertIsNotNone(dvault_crawler)
-
-        data_catalogs = {
-            resource["address"]: resource
-            for resource in self.plan["planned_values"]["root_module"]["resources"]
-            if resource["type"] == "aws_glue_catalog_database"
-        }
-        dvault_catalog = data_catalogs.get(
-            "aws_glue_catalog_database.aws-glue-catalog-database", None
-        )
-        self.assertIsNotNone(dvault_catalog)
+        eslogs_trigger = triggers.get("aws_glue_trigger.eslogsjob-trigger", None)
+        self.assertIsNotNone(eslogs_trigger)
 
 
 if __name__ == "__main__":

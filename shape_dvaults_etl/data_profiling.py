@@ -5,7 +5,7 @@ import sys
 from cerberus import Validator
 
 # Setup logger
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
@@ -75,10 +75,10 @@ def run_data_profiling(event, service_type):
                 "required": True,
                 "allowed": [
                     "ADD_TAG",
-                    "SEARCH_IMAGE",
+                    "SEARCH IMAGE",
                     "PUBLISH",
                     "DELETE",
-                    "DELETE_SLIDE",
+                    "DELETE SLIDE",
                 ],
             },
         }
@@ -299,18 +299,18 @@ def main():
                 profile_flag, errors = run_data_profiling(event, service_type)
                 if (service_name is None) or not (profile_flag):
                     dirty_dvaults.append(json.dumps(event))
-                    info_msg = (
-                        f"PROFILER - "
-                        f'EventId:{event["id"]}|'
-                        f"HasPassed:{profile_flag}|"
-                        f"DvaultFile:{file_name}|"
-                        f"ServiceName:{service_name}|"
-                        f"ServiceType:{service_type}|"
-                        f"Errors:{json.dumps(errors)}"
-                    )
-                    logger.info(info_msg)
                 else:
                     clean_dvaults.append(json.dumps(event))
+                info_msg = (
+                    f"PROFILER - "
+                    f'EventId:{event["id"]}|'
+                    f"HasPassed:{profile_flag}|"
+                    f"DvaultFile:{file_name}|"
+                    f"ServiceName:{service_name}|"
+                    f"ServiceType:{service_type}|"
+                    f"Errors:{json.dumps(errors)}"
+                )
+                logger.info(info_msg)
         except Exception as e:
             logger.error(
                 "Something wrong with extraction of dvaults from file. Process stopped."
