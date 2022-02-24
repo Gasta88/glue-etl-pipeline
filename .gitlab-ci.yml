@@ -91,6 +91,7 @@ python_unit_test:
     - *poetry_template
   script:
     - poetry run python -m unittest discover -s test/unit_tests
+    - poetry run coverage run --source=test/unit_tests -m unittest discover -s test/unit_tests
     - poetry run coverage report -m
     - poetry run coverage-badge
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
