@@ -183,7 +183,7 @@ def get_spark_dataframe(spark, table_name, landing_bucketname, all_jsons):
     return df
 
 
-def get_refined_df(spark, df, sql_dict, table_name):
+def get_refined_dataframe(spark, df, sql_dict, table_name):
     """
     Clean up and refine the data inside the dataframe
 
@@ -216,7 +216,7 @@ def main():
             f's3://{run_props["LANDING_BUCKETNAME"]}',
             run_props["ALL_JSONS"],
         )
-        refined_df = get_refined_df(
+        refined_df = get_refined_dataframe(
             run_props["SPARK"], df, run_props["SQL_DICT"], table_name
         )
         refined_df.write.format("parquet").mode("append").save(parquet_filename)
