@@ -55,18 +55,119 @@ def get_run_properties():
         "SUMMARIZER_PRED",
         "SUMMARIZER_EVENT",
     ]
+    config["SQL_DICT"] = {
+        "HEADLINE_PRED": """
+                            select
+                            account,
+                            detail.id as id,
+                            detail.partitionkey as partition_key,
+                            detail.prediction.service as service,
+                            detail.prediction.service_version as service_version,
+                            detail.prediction.timestamp as unix_timestamp,
+                            detail.prediction.shape_id as shape_id,
+                            detail.prediction.input.transcript as transcript,
+                            detail.prediction.output.headline as headline,
+                            time as date_time
+                            from headline_pred;
+                        """,
+        "HEADLINE_EVENT": """
+                            select
+                            account,
+                            detail.id as id,
+                            detail.partitionkey as partition_key,
+                            detail.evaluation.prediction_id as prediction_id,
+                            detail.evaluation.reporter as reporter,
+                            detail.evaluation.type as event_type,
+                            detail.evaluation.timestamp as unix_timestamp,
+                            detail.evaluation.shape_id as shape_id,
+                            detail.evaluation.payload.text as payload_text,
+                            time as date_time
+                            from headline_event;
+                        """,
+        "STE_PRED": """
+                            select
+                            account,
+                            detail.id as id,
+                            detail.partitionkey as partition_key,
+                            detail.prediction.service as service,
+                            detail.prediction.service_version as service_version,
+                            detail.prediction.timestamp as unix_timestamp,
+                            detail.prediction.shape_id as shape_id,
+                            detail.prediction.context as context,
+                            detail.prediction.input.paragraph as paragraph,
+                            detail.prediction.output.scores as scores,
+                            detail.prediction.output.search_terms as search_terms,
+                            detail.prediction.output.sentence as sentence,
+                            time as date_time
+                            from ste_pred;
+                        """,
+        "STE_EVENT": """
+                            select
+                            account,
+                            detail.id as id,
+                            detail.partitionkey as partition_key,
+                            detail.evaluation.prediction_id as prediction_id,
+                            detail.evaluation.reporter as reporter,
+                            detail.evaluation.type as event_type,
+                            detail.evaluation.timestamp as unix_timestamp,
+                            detail.evaluation.shape_id as shape_id,
+                            detail.evaluation.payload.text as payload_text,
+                            detail.evaluation.payload.query as payload_query,
+                            detail.evaluation.payload.search_terms as payload_search_terms,
+                            detail.evaluation.payload.media_id as payload_media_id,
+                            detail.evaluation.payload.media_type as payload_media_type,
+                            detail.evaluation.payload.medialib as payload_medialib,
+                            detail.evaluation.payload.tags as payload_tags,
+                            detail.evaluation.payload.caption as payload_caption,
+                            time as date_time
+                            from ste_event
+                        """,
+        "SUMMARIZER_PRED": """
+                            select
+                            account,
+                            detail.id as id,
+                            detail.partitionkey as partition_key,
+                            detail.prediction.service as service,
+                            detail.prediction.service_version as service_version,
+                            detail.prediction.timestamp as unix_timestamp,
+                            detail.prediction.shape_id as shape_id,
+                            detail.prediction.input.paragraphs as input_paragraphs,
+                            detail.prediction.input.sentences_scores as input_sentences_scores,
+                            detail.prediction.output.summary as output_summary,
+                            detail.prediction.output.metadata as output_metadata,
+                            detail.prediction.output.skipped_paragraphs as output_skipped_paragraphs,
+                            time as date_time
+                            from summarizer_pred;
+                        """,
+        "SUMMARIZER_EVENT": """
+                            select
+                            account,
+                            detail.id as id,
+                            detail.partitionkey as partition_key,
+                            detail.evaluation.prediction_id as prediction_id,
+                            detail.evaluation.timestamp as unix_timestamp,
+                            detail.evaluation.shape_id as shape_id,
+                            detail.evaluation.type as event_type,
+                            detail.evaluation.reporter as reporter,
+                            detail.evaluation.payload.paragraph as paragraph,
+                            detail.evaluation.payload.slide as slide,
+                            detail.evaluation.payload.text as text,
+                            time as date_time
+                            from summarizer_event;
+                        """,
+    }
     return config
 
 
-def create_parquet(spark, table_name, dest_filename, landing_bucketname, all_jsons):
+def get_spark_dataframe(spark, table_name, landing_bucketname, all_jsons):
     """
-    Create Parquet file into clean-parquet prefix.
+    Create Spark dataframe by using the table name (service type/service name).
 
     :param spark: Spark Session object.
-    :param table_name: name of the Athena table to refer.
-    :param dest_filename: name final Parquet file.
+    :param table_name: name of the table to refer.
     :landing_bucketname: name of the S3 bucket wehre to store parquet files.
-    :all_jsons: array of flat JSON files generated from the ETL pipeline so far.
+    :all_jsons: array of flat JSON files generated from the ETL pipeline so far
+    :return df: Spark dataframe
     """
     service_name = table_name.split("_")[0]
     table_type = table_name.split("_")[1]
@@ -79,10 +180,27 @@ def create_parquet(spark, table_name, dest_filename, landing_bucketname, all_jso
     if len(file_names) > 0:
         logger.info(f'Converting: {"; ".join(file_names)}')
         df = spark.read.json(file_names)
-        df.write.format("parquet").mode("append").save(dest_filename)
-    else:
-        logger.warn("No split JSON to convert to Parquet.")
-    return
+    return df
+
+
+def get_refined_df(spark, df, sql_dict, table_name):
+    """
+    Clean up and refine the data inside the dataframe
+
+    :param spark: Spark Session object.
+    :param df: source dataframe.
+    :param sql_dict: collection of SQL statements to refine the df.
+    :param table_name: name of the table to refer.
+    :return refined_df: cleaned dataframe to store on S3.
+    """
+    logger.info(f"Refining dataset {table_name}")
+    df.createOrReplaceTempView(table_name.lower())
+    try:
+        refined_df = spark.sql(sql_dict[table_name])
+    except:
+        logger.error(f"Refinement of dataset {table_name} failed.")
+        sys.exit(1)
+    return refined_df
 
 
 def main():
@@ -91,14 +209,18 @@ def main():
     """
     run_props = get_run_properties()
     for table_name in run_props["TABLE_NAMES"]:
-        parquet_filename = f'{run_props["OUTPUT_PATH"]}/{table_name}.parquet'
-        create_parquet(
+        parquet_filename = f's3://{run_props["LANDING_BUCKETNAME"]}/{run_props["OUTPUT_PATH"]}/{table_name}.parquet'
+        df = get_spark_dataframe(
             run_props["SPARK"],
             table_name,
-            parquet_filename,
             f's3://{run_props["LANDING_BUCKETNAME"]}',
             run_props["ALL_JSONS"],
         )
+        refined_df = get_refined_df(
+            run_props["SPARK"], df, run_props["SQL_DICT"], table_name
+        )
+        refined_df.write.format("parquet").mode("append").save(parquet_filename)
+    return
 
 
 if __name__ == "__main__":
