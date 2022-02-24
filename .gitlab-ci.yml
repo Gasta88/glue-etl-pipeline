@@ -78,6 +78,7 @@ terraform_unit_test:
     - terraform show -json plan.out > plan.json
     - cd ../test/unit_tests
     - python -m unittest check_terraform_plan.py
+    - terraform workspace select default
     - terraform workspace delete -force unit-test
 
 # run python unit tests
@@ -117,4 +118,5 @@ e2e_test:
   after_script:
     - cd deployments
     - terraform destroy --auto-approve
+    - terraform workspace select default
     - terraform workspace delete -force e2e-test

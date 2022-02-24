@@ -108,7 +108,7 @@ def clean_up_es_index(
     es = Elasticsearch(es_url)
     if not es.ping():
         sys.exit(1)
-    es.indices.delete(index_name=index_name)
+    es.indices.delete(index=index_name)
     return
 
 
