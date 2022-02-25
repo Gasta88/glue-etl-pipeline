@@ -55,7 +55,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.input.transcript as transcript,
                             detail.prediction.output.headline as headline,
                             time as date_time
-                            from headline_pred;
+                            from headline_pred
                         """,
             "HEADLINE_EVENT": """
                             select
