@@ -4,6 +4,7 @@ import sys
 import json
 from elasticsearch import Elasticsearch
 from datetime import datetime
+import os
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -190,6 +191,9 @@ def send_log_to_es(
     :param nice_logs: formatted logs to create the index.
     :param index_name: string that represent the name of the ES index.
     """
+    ci_cd = os.environ.get("CI_CD", None)
+    if ci_cd is not None:
+        index_name = "dvault_logs_test"
     es = Elasticsearch(es_url)
     if not es.ping():
         logger.error(f"No cluster available at {es_url}")
