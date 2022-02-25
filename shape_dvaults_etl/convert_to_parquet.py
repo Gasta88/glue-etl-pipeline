@@ -68,7 +68,7 @@ def get_run_properties():
                             detail.prediction.input.transcript as transcript,
                             detail.prediction.output.headline as headline,
                             time as date_time
-                            from headline_pred;
+                            from headline_pred
                         """,
         "HEADLINE_EVENT": """
                             select
@@ -82,7 +82,7 @@ def get_run_properties():
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             time as date_time
-                            from headline_event;
+                            from headline_event
                         """,
         "STE_PRED": """
                             select
@@ -99,7 +99,7 @@ def get_run_properties():
                             detail.prediction.output.search_terms as search_terms,
                             detail.prediction.output.sentence as sentence,
                             time as date_time
-                            from ste_pred;
+                            from ste_pred
                         """,
         "STE_EVENT": """
                             select
@@ -113,7 +113,6 @@ def get_run_properties():
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             detail.evaluation.payload.query as payload_query,
-                            detail.evaluation.payload.search_terms as payload_search_terms,
                             detail.evaluation.payload.media_id as payload_media_id,
                             detail.evaluation.payload.media_type as payload_media_type,
                             detail.evaluation.payload.medialib as payload_medialib,
@@ -137,7 +136,7 @@ def get_run_properties():
                             detail.prediction.output.metadata as output_metadata,
                             detail.prediction.output.skipped_paragraphs as output_skipped_paragraphs,
                             time as date_time
-                            from summarizer_pred;
+                            from summarizer_pred
                         """,
         "SUMMARIZER_EVENT": """
                             select
@@ -153,7 +152,7 @@ def get_run_properties():
                             detail.evaluation.payload.slide as slide,
                             detail.evaluation.payload.text as text,
                             time as date_time
-                            from summarizer_event;
+                            from summarizer_event
                         """,
     }
     return config
@@ -180,6 +179,9 @@ def get_spark_dataframe(spark, table_name, landing_bucketname, all_jsons):
     if len(file_names) > 0:
         logger.info(f'Converting: {"; ".join(file_names)}')
         df = spark.read.json(file_names)
+    else:
+        logger.warn(f"No available files for {table_name}")
+        sys.exit(1)
     return df
 
 
@@ -209,7 +211,7 @@ def main():
     """
     run_props = get_run_properties()
     for table_name in run_props["TABLE_NAMES"]:
-        parquet_filename = f's3://{run_props["LANDING_BUCKETNAME"]}/{run_props["OUTPUT_PATH"]}/{table_name}.parquet'
+        parquet_filename = f'{run_props["OUTPUT_PATH"]}/{table_name}.parquet'
         df = get_spark_dataframe(
             run_props["SPARK"],
             table_name,

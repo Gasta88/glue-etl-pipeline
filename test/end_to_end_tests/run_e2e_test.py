@@ -4,6 +4,7 @@ import sys
 import time
 import pyarrow.parquet as pq
 from elasticsearch import Elasticsearch
+import os
 
 
 def upload_files(input_dir, landing_bucketname):
@@ -105,6 +106,9 @@ def clean_up_es_index(
 
     :param es_url: URL of the ElasticSearch domain.
     """
+    ci_cd = os.environ.get("CI_CD", None)
+    if ci_cd is not None:
+        index_name = "dvault_logs_test"
     es = Elasticsearch(es_url)
     if not es.ping():
         sys.exit(1)

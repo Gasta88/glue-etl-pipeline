@@ -110,6 +110,7 @@ e2e_test:
   before_script:
     - *poetry_template
   script:
+    - export CI_CD=true
     - cd deployments
     - terraform init
     - terraform workspace select e2e-test || terraform workspace new e2e-test
