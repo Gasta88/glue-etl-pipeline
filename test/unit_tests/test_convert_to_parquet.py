@@ -69,7 +69,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             time as date_time
-                            from headline_event;
+                            from headline_event
                         """,
             "STE_PRED": """
                             select
@@ -86,7 +86,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.output.search_terms as search_terms,
                             detail.prediction.output.sentence as sentence,
                             time as date_time
-                            from ste_pred;
+                            from ste_pred
                         """,
             "STE_EVENT": """
                             select
@@ -100,7 +100,6 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             detail.evaluation.payload.query as payload_query,
-                            detail.evaluation.payload.search_terms as payload_search_terms,
                             detail.evaluation.payload.media_id as payload_media_id,
                             detail.evaluation.payload.media_type as payload_media_type,
                             detail.evaluation.payload.medialib as payload_medialib,
@@ -124,7 +123,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.output.metadata as output_metadata,
                             detail.prediction.output.skipped_paragraphs as output_skipped_paragraphs,
                             time as date_time
-                            from summarizer_pred;
+                            from summarizer_pred
                         """,
             "SUMMARIZER_EVENT": """
                             select
@@ -140,7 +139,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.payload.slide as slide,
                             detail.evaluation.payload.text as text,
                             time as date_time
-                            from summarizer_event;
+                            from summarizer_event
                         """,
         }
 
