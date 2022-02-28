@@ -122,8 +122,8 @@ def main():
     """
     # main properties
     input_dir = "data/input"
-    landing_bucketname = "dvault-landing-dev"
-    workflow_name = "s3-batch-glue-dvault-workflow-dev"
+    landing_bucketname = "dvault-landing-e2e-test"
+    workflow_name = "s3-batch-glue-dvault-workflow-e2e-test"
     expected_parquet_files = glob.glob("data/expected/*")
     # load dvault into S3
     upload_files(input_dir, landing_bucketname)
