@@ -136,7 +136,7 @@ resource "aws_iam_policy" "s3-data-policy" {
 }
 
 resource "aws_glue_connection" "elasticsearch" {
-  name            = "glue-connection-to-elasticsearch-${terraform.workspace}"
+  name            = "dvault-glue-connection-to-elasticsearch-${terraform.workspace}"
   connection_type = "NETWORK"
 
   physical_connection_requirements {
