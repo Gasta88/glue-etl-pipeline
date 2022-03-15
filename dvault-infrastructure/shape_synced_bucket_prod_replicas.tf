@@ -1,41 +1,41 @@
 #Alternative provider for different region
 provider "aws" {
-    alias = "europe"
-    region  = "eu-west-1"
+    alias = "europe-central"
+    region  = "eu-central-1"
     profile = "default"
 }
 
 #Create KMS key to bucket ecryption
-resource "aws_kms_key" "key" {
-  provider = aws.europe
-  description = "sync-prod-key"
+resource "aws_kms_key" "key-central" {
+  provider = aws.europe-central
+  description = "sync-prod-key-central"
   deletion_window_in_days = 7
 }
 
-resource "aws_kms_alias" "kms_key_alias" {
-  provider = aws.europe
-  name = "alias/sync-prod-key"
-  target_key_id = aws_kms_key.key.key_id
+resource "aws_kms_alias" "kms_key_alias_central" {
+  provider = aws.europe-central
+  name = "alias/sync-prod-key-central"
+  target_key_id = aws_kms_key.key-central.key_id
 }
 #Create s3 bucket that should contain the buckets access logging
-resource "aws_s3_bucket" "log_bucket" {
-  provider = aws.europe
-  bucket = "sync-prod-access-logging"
+resource "aws_s3_bucket" "log_bucket_central" {
+  provider = aws.europe-central
+  bucket = "sync-prod-access-logging-central"
   acl    = "private"
 }
 #Create s3 bucket that should be sync with
-resource "aws_s3_bucket" "shape-media-library-sync-prod" {
-  provider = aws.europe
-  bucket = "shape-media-library-sync-prod-eu"
+resource "aws_s3_bucket" "shape-media-library-sync-prod-central" {
+  provider = aws.europe-central
+  bucket = "shape-media-library-sync-prod-eu-central"
   acl    = "private"
   logging {
-    target_bucket = aws_s3_bucket.log_bucket.id
-    target_prefix = "log/shape-media-library-sync-prod/"
+    target_bucket = aws_s3_bucket.log_bucket_central.id
+    target_prefix = "log/shape-media-library-sync-prod-central/"
   }     
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.key.key_id
+        kms_master_key_id = aws_kms_key.key-central.key_id
         sse_algorithm     = "aws:kms"
       }
     }
@@ -45,9 +45,9 @@ resource "aws_s3_bucket" "shape-media-library-sync-prod" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "shape-media-library-sync-prod" {
-  provider = aws.europe
-  bucket                  = aws_s3_bucket.shape-media-library-sync-prod.id
+resource "aws_s3_bucket_public_access_block" "shape-media-library-sync-prod-central" {
+  provider = aws.europe-central
+  bucket                  = aws_s3_bucket.shape-media-library-sync-prod-central.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -84,18 +84,18 @@ resource "aws_s3_bucket_public_access_block" "shape-media-library-sync-prod" {
 #   })
 # }
 
-resource "aws_s3_bucket" "shape-file-source-sync-prod" {
-  provider = aws.europe
-  bucket = "shape-file-source-sync-prod-eu"
+resource "aws_s3_bucket" "shape-file-source-sync-prod-central" {
+  provider = aws.europe-central
+  bucket = "shape-file-source-sync-prod-eu-central"
   acl    = "private"
   logging {
-    target_bucket = aws_s3_bucket.log_bucket.id
-    target_prefix = "log/shape-file-source-sync-prod/"
+    target_bucket = aws_s3_bucket.log_bucket_central.id
+    target_prefix = "log/shape-file-source-sync-prod-central/"
   }   
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.key.key_id
+        kms_master_key_id = aws_kms_key.key-central.key_id
         sse_algorithm     = "aws:kms"
       }
     }
@@ -105,9 +105,9 @@ resource "aws_s3_bucket" "shape-file-source-sync-prod" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "shape-file-source-sync-prod" {
-  provider = aws.europe
-  bucket                  = aws_s3_bucket.shape-file-source-sync-prod.id
+resource "aws_s3_bucket_public_access_block" "shape-file-source-sync-prod-central" {
+  provider = aws.europe-central
+  bucket                  = aws_s3_bucket.shape-file-source-sync-prod-central.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -144,18 +144,18 @@ resource "aws_s3_bucket_public_access_block" "shape-file-source-sync-prod" {
 #   })
 # }
 
-resource "aws_s3_bucket" "shape-bucket-storage-sync-prod" {
-  provider = aws.europe
-  bucket = "shape-bucket-storage-sync-prod-eu"
+resource "aws_s3_bucket" "shape-bucket-storage-sync-prod-central" {
+  provider = aws.europe-central
+  bucket = "shape-bucket-storage-sync-prod-eu-central"
   acl    = "private"
   logging {
-    target_bucket = aws_s3_bucket.log_bucket.id
-    target_prefix = "log/shape-bucket-storage-sync-prod/"
+    target_bucket = aws_s3_bucket.log_bucket_central.id
+    target_prefix = "log/shape-bucket-storage-sync-prod-central/"
   }  
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.key.key_id
+        kms_master_key_id = aws_kms_key.key-central.key_id
         sse_algorithm     = "aws:kms"
       }
     }
@@ -165,9 +165,9 @@ resource "aws_s3_bucket" "shape-bucket-storage-sync-prod" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "shape-bucket-storage-sync-prod" {
-  provider = aws.europe
-  bucket                  = aws_s3_bucket.shape-bucket-storage-sync-prod.id
+resource "aws_s3_bucket_public_access_block" "shape-bucket-storage-sync-prod-central" {
+  provider = aws.europe-central
+  bucket                  = aws_s3_bucket.shape-bucket-storage-sync-prod-central.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -205,18 +205,18 @@ resource "aws_s3_bucket_public_access_block" "shape-bucket-storage-sync-prod" {
 # }
 
 #Create s3 bucket that should be sync with
-resource "aws_s3_bucket" "ai-dvault-sync-prod" {
-  provider = aws.europe
-  bucket = "ai-dvault-sync-prod-eu"
+resource "aws_s3_bucket" "ai-dvault-sync-prod-central" {
+  provider = aws.europe-central
+  bucket = "ai-dvault-sync-prod-eu-central"
   acl    = "private"
   logging {
-    target_bucket = aws_s3_bucket.log_bucket.id
-    target_prefix = "log/ai-dvault-sync-prod/"
+    target_bucket = aws_s3_bucket.log_bucket_central.id
+    target_prefix = "log/ai-dvault-sync-prod-central/"
   }
   server_side_encryption_configuration {
     rule {
       apply_server_side_encryption_by_default {
-        kms_master_key_id = aws_kms_key.key.key_id
+        kms_master_key_id = aws_kms_key.key-central.key_id
         sse_algorithm     = "aws:kms"
       }
     }
@@ -226,9 +226,9 @@ resource "aws_s3_bucket" "ai-dvault-sync-prod" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "ai-dvault-sync-prod" {
-  provider = aws.europe
-  bucket                  = aws_s3_bucket.shape-bucket-storage-sync-prod.id
+resource "aws_s3_bucket_public_access_block" "ai-dvault-sync-prod-central" {
+  provider = aws.europe-central
+  bucket                  = aws_s3_bucket.shape-bucket-storage-sync-prod-central.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
