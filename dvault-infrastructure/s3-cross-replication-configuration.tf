@@ -2,7 +2,6 @@ resource "aws_s3_bucket_replication_configuration" "shape-media-library-sync-pro
   provider = aws.europe
   role   = aws_iam_role.replication.arn
   bucket = aws_s3_bucket.shape-media-library-sync-prod.id
-
   rule {
     status = "Enabled"
     destination {
@@ -25,7 +24,6 @@ resource "aws_s3_bucket_replication_configuration" "shape-file-source-sync-prod-
   provider = aws.europe
   role   = aws_iam_role.replication.arn
   bucket = aws_s3_bucket.shape-file-source-sync-prod.id
-
   rule {
     status = "Enabled"
     destination {
@@ -48,7 +46,6 @@ resource "aws_s3_bucket_replication_configuration" "shape-bucket-storage-sync-pr
   provider = aws.europe 
   role   = aws_iam_role.replication.arn
   bucket = aws_s3_bucket.shape-bucket-storage-sync-prod.id
-
   rule {
     status = "Enabled"
     destination {
@@ -71,7 +68,6 @@ resource "aws_s3_bucket_replication_configuration" "ai-dvault-sync-prod-replicat
   provider = aws.europe 
   role   = aws_iam_role.replication.arn
   bucket = aws_s3_bucket.ai-dvault-sync-prod.id
-
   rule {
     status = "Enabled"
     destination {
