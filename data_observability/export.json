@@ -22,6 +22,55 @@
     }
   },
   {
+    "_id": "2be4a940-94b5-11ec-b6a7-83b964b0ae49",
+    "_type": "search",
+    "_source": {
+      "title": "dvault_view_1",
+      "description": "",
+      "hits": 0,
+      "columns": [
+        "workflow_run_id",
+        "dvault_filename",
+        "passed",
+        "service_type",
+        "service_name"
+      ],
+      "sort": [
+        "timestamp",
+        "desc"
+      ],
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"85475b00-94aa-11ec-b6a7-83b964b0ae49\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[]}"
+      }
+    }
+  },
+  {
+    "_id": "b3526410-94b7-11ec-b6a7-83b964b0ae49",
+    "_type": "search",
+    "_source": {
+      "title": "dvault_view_2",
+      "description": "",
+      "hits": 0,
+      "columns": [
+        "workflow_run_id",
+        "dvault_filename",
+        "passed",
+        "service_type",
+        "service_name",
+        "errors"
+      ],
+      "sort": [
+        "timestamp",
+        "desc"
+      ],
+      "version": 1,
+      "kibanaSavedObjectMeta": {
+        "searchSourceJSON": "{\"index\":\"85475b00-94aa-11ec-b6a7-83b964b0ae49\",\"highlightAll\":true,\"version\":true,\"query\":{\"language\":\"lucene\",\"query\":\"\"},\"filter\":[{\"meta\":{\"negate\":true,\"index\":\"85475b00-94aa-11ec-b6a7-83b964b0ae49\",\"type\":\"phrase\",\"key\":\"passed\",\"value\":\"True\",\"params\":{\"query\":\"True\",\"type\":\"phrase\"},\"disabled\":false,\"alias\":null},\"query\":{\"match\":{\"passed\":{\"query\":\"True\",\"type\":\"phrase\"}}},\"$state\":{\"store\":\"appState\"}}]}"
+      }
+    }
+  },
+  {
     "_id": "8f4c9070-94af-11ec-b6a7-83b964b0ae49",
     "_type": "visualization",
     "_source": {
