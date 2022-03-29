@@ -35,7 +35,7 @@ def get_run_properties():
         Name=workflow_name, RunId=workflow_run_id
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
-    s3 = boto3.resource("s3", region_name="us-east-1")
+    s3 = boto3.resource("s3")
     config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
     config["DVAULT_PREFIX"] = {
         "dirty": "data/dirty_dvaults",
@@ -262,7 +262,7 @@ def save_dvaults(el_list, el_type, file_name, dvault_prefix, landing_bucketname)
     :param file_name: name of the dvault file.
     """
     if len(el_list) > 0:
-        s3 = boto3.resource("s3", region_name="us-east-1")
+        s3 = boto3.resource("s3")
         logger.info(f"There are {len(el_list)} {el_type.upper()} elements.")
         tmp_key = f"/tmp/{file_name}_{el_type.upper()}"
         output_key = f"{dvault_prefix.get(el_type)}/{file_name}_{el_type.upper()}"
