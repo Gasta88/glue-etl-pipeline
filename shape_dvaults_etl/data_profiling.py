@@ -287,9 +287,6 @@ def main():
         file_content = s3.cat_file(
             f's3://{run_props["LANDING_BUCKETNAME"]}/{obj_key}'
         ).decode("utf-8")
-        # tmp_filename = "/tmp/tmp_file"
-        # obj = run_props["BUCKET"].Object(obj_key)
-        # obj.download_file(tmp_filename)
 
         try:
             events_arr = split_files(file_content)
