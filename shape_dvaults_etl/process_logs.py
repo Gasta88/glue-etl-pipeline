@@ -111,7 +111,7 @@ def get_valid_workflow_run(workflow_name, workflow_run_id):
     return workflow_details
 
 
-def get_log_entries(workflow_details, log_group_name="/aws-glue/python-jobs/output"):
+def get_log_entries(workflow_details, log_group_name="/aws-glue/jobs/output"):
     """
     Extract log entries from the PROFILER and attach them to the workflow details.
 

@@ -33,6 +33,19 @@ resource "aws_s3_bucket" "dvault-bucket" {
   lifecycle {
     prevent_destroy = false
   }
+
+  lifecycle_rule {
+    abort_incomplete_multipart_upload_days = 0
+    enabled                                = true
+    id                                     = "spark-logs-clean-up"
+    prefix                                 = "spark-logs/"
+
+    expiration {
+      days                         = 30
+      expired_object_delete_marker = false
+    }
+  }
+
   versioning {
     enabled = true
   }
@@ -55,6 +68,14 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
   source   = "../dependencies/${each.value}"
   etag     = filemd5("../dependencies/${each.value}")
 }
+
+resource "aws_s3_bucket_object" "sparkui-folder" {
+  bucket = aws_s3_bucket.dvault-bucket.bucket
+  acl    = "private"
+  key    = "spark-logs/"
+  source = "/dev/null"
+}
+
 
 #--------------------------- AWS Glue resources
 
@@ -122,7 +143,7 @@ resource "aws_iam_policy" "s3-data-policy" {
           "logs:DescribeLogStreams"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/python-jobs/output:*"
+        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/jobs/output:*"
       },
       {
         "Action" : [
@@ -375,7 +396,9 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = ""
+    "--enable-metrics"                   = "",
+    "--enable-spark-ui"                  = "true",
+    "--spark-event-logs-path"            = "s3://${aws_s3_bucket.dvault-bucket.bucket}/spark-logs/"
   }
   timeout = 15
 }
