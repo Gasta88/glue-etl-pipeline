@@ -234,7 +234,7 @@ def split_files(file_content):
     """
     Split agglomerated dvault from Firehose Kinesis.
 
-    :param file_content: dvault ffile content   .
+    :param file_content: dvault file content.
     :return data_arr: list of dictionaries representing dvault elements.
     """
     decoder = json.JSONDecoder()

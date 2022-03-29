@@ -2,6 +2,7 @@ import json
 import boto3
 import logging
 import sys
+import s3fs
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -35,14 +36,14 @@ def get_run_properties():
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
     config["MEDIA_BUCKETNAME"] = run_properties["media_bucketname"]
-    s3 = boto3.resource("s3", region_name="us-east-1")
+    s3 = boto3.resource("s3")
     config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
     media_bucket = s3.Bucket(config["MEDIA_BUCKETNAME"])
     config["ALL_MEDIAS"] = [obj.key for obj in list(media_bucket.objects.all())]
-    config["DVAULT_FILES"] = [
-        obj.key
-        for obj in list(config["BUCKET"].objects.filter(Prefix="data/clean_dvaults"))
-    ]
+    # config["DVAULT_FILES"] = [
+    #     obj.key
+    #     for obj in list(config["BUCKET"].objects.filter(Prefix="data/clean_dvaults"))
+    # ]
     return config
 
 
@@ -159,30 +160,30 @@ def _get_service_name(el):
     return service_name
 
 
-def split_files(tmp_filename):
+def split_files(file_content):
     """
     Divide Firehose Kinesis file in PREDICTIONS and EVENTS files.
     Label the dedicated service name in the file name.
 
-    :param tmp_filename: location of the tmp file where object content is stored.
+    :param file_content: dvault file content.
     :return predictions_arr: list of JSON predictions extracted from the file
     :return events_arr: list of JSON events extracted from the file
     """
     predictions_arr = {"summarizer": [], "headline": [], "ste": []}
     events_arr = {"summarizer": [], "headline": [], "ste": []}
-    content = []
-    with open(tmp_filename) as f:
-        content = f.readlines()
-    content = content[0].replace('}{"version"', '}${"version"')
-    for el in content.split("}}$"):
-        # remove Luca's legacy tests
-        if "hello from vcoach" in el:
-            continue
-        # last element in array already have "}}". No need to attach it.
-        if el[-2:] != "}}":
-            el = el + "}}"
+    decoder = json.JSONDecoder()
+    content_length = len(file_content)
+    decode_index = 0
+
+    while decode_index < content_length:
         try:
-            flat_el = json.loads(el)
+            obj, decode_index = decoder.raw_decode(file_content, decode_index)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSONDecodeError: {e}")
+            # Scan forward and keep trying to decode
+            decode_index += 1
+        try:
+            flat_el = obj
             service_name = _get_service_name(flat_el)
             if flat_el["detail"]["type"] == "DVaultPredictionEvent":
                 predictions_arr[service_name].append(flat_el)
@@ -231,15 +232,16 @@ def main():
     Run main steps in the flat_dvaults Glue Job.
     """
     run_props = get_run_properties()
-    tmp_filename = "/tmp/tmp_file"
-    for obj_key in run_props["DVAULT_FILES"]:
+    s3 = s3fs.S3FileSystem()
+    for obj_key in s3.ls(f's3://{run_props["LANDING_BUCKETNAME"]}/data/clean_dvaults'):
         logger.info(f"Splitting file {obj_key}.")
         file_name = obj_key.split("/")[-1]
-        obj = run_props["BUCKET"].Object(obj_key)
-        obj.download_file(tmp_filename)
+        file_content = s3.cat_file(
+            f's3://{run_props["LANDING_BUCKETNAME"]}/{obj_key}'
+        ).decode("utf-8")
 
         try:
-            predictions_arr, events_arr = split_files(tmp_filename)
+            predictions_arr, events_arr = split_files(file_content)
             logger.info(
                 f"Extracted {len(predictions_arr)} prediction elements from file."
             )
