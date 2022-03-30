@@ -35,8 +35,8 @@ def get_run_properties():
         Name=workflow_name, RunId=workflow_run_id
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
-    s3 = boto3.resource("s3")
-    config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
+    # s3 = boto3.resource("s3")
+    # config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
     config["DVAULT_PREFIX"] = {
         "dirty": "data/dirty_dvaults",
         "clean": "data/clean_dvaults",

@@ -36,14 +36,11 @@ def get_run_properties():
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
     config["MEDIA_BUCKETNAME"] = run_properties["media_bucketname"]
-    s3 = boto3.resource("s3")
-    config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
-    media_bucket = s3.Bucket(config["MEDIA_BUCKETNAME"])
-    config["ALL_MEDIAS"] = [obj.key for obj in list(media_bucket.objects.all())]
-    # config["DVAULT_FILES"] = [
-    #     obj.key
-    #     for obj in list(config["BUCKET"].objects.filter(Prefix="data/clean_dvaults"))
-    # ]
+    s3 = s3fs.S3FileSystem()
+    # config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
+    # media_bucket = s3.Bucket(config["MEDIA_BUCKETNAME"])
+    # config["ALL_MEDIAS"] = [obj.key for obj in list(media_bucket.objects.all())]
+    config["ALL_MEDIAS"] = s3.glob(f's3://{run_properties["media_bucketname"]}/*/*/*')
     return config
 
 
@@ -208,7 +205,7 @@ def save_flat_json(el_dict, el_type, file_name, landing_bucketname):
     :param file_name: dvault file name.
     :param landing_bucketname: string that refer t S3 bucket where file is going to be saved.
     """
-    s3 = boto3.resource("s3", region_name="us-east-1")
+    s3 = boto3.resource("s3")
     for service_name, elements in el_dict.items():
         logger.info(f"There are {len(elements)} items for {service_name}.")
         if len(elements) > 0:
@@ -236,9 +233,7 @@ def main():
     for obj_key in s3.ls(f's3://{run_props["LANDING_BUCKETNAME"]}/data/clean_dvaults'):
         logger.info(f"Splitting file {obj_key}.")
         file_name = obj_key.split("/")[-1]
-        file_content = s3.cat_file(
-            f's3://{run_props["LANDING_BUCKETNAME"]}/{obj_key}'
-        ).decode("utf-8")
+        file_content = s3.cat_file(f"s3://{obj_key}").decode("utf-8")
 
         try:
             predictions_arr, events_arr = split_files(file_content)
