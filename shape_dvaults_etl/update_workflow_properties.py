@@ -2,6 +2,7 @@ import boto3
 import sys
 from awsglue.utils import getResolvedOptions
 import logging
+import s3fs
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -72,13 +73,14 @@ def get_dvaults_from_s3(landing_bucketname):
     :param landing_bucketname: name of landing S3 bucket.
     :return dvaults: list of dvault file names.
     """
-    s3 = boto3.resource("s3", region_name="us-east-1")
+    s3 = s3fs.S3FileSystem()
     dvaults = []
     logger.info("Get all available dvault files.")
-    landing_bucket = s3.Bucket(landing_bucketname)
-    dvaults = [
-        obj.key for obj in list(landing_bucket.objects.filter(Prefix="data/raw"))
-    ]
+    # landing_bucket = s3.Bucket(landing_bucketname)
+    # dvaults = [
+    #     obj.key for obj in list(landing_bucket.objects.filter(Prefix="data/raw"))
+    # ]
+    dvaults = s3.ls(f"s3://{landing_bucketname}/data/raw")
     logger.info(f"Found {len(dvaults)} new dvaults.")
     return dvaults
 

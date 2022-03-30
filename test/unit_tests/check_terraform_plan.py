@@ -29,7 +29,7 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_s3_bucket_object"
         }
-        self.assertEqual(len(prefixes), 10)
+        self.assertEqual(len(prefixes), 11)
 
         # add more tests if more prefixes are created
 

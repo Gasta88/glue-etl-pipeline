@@ -143,7 +143,7 @@ resource "aws_iam_policy" "s3-data-policy" {
           "logs:DescribeLogStreams"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/jobs/output:*"
+        Resource = "arn:aws:logs:*:*:log-group:/aws-glue/python-jobs/output:*"
       },
       {
         "Action" : [
@@ -206,7 +206,8 @@ resource "aws_glue_job" "pre-job" {
     "--transition_state" : "STARTED",
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = ""
+    "--enable-metrics"                   = "",
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
   }
   timeout = 15
 }
@@ -262,7 +263,7 @@ resource "aws_glue_job" "profile-dvault-job" {
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",
-    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/Cerberus-1.3.3-py3-none-any.whl"
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/Cerberus-1.3.3-py3-none-any.whl,s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
   }
   timeout = 15
 }
@@ -318,7 +319,8 @@ resource "aws_glue_job" "flat-dvault-job" {
     "--TempDir" : "s3://${aws_s3_bucket.dvault-bucket.bucket}/tmp/",
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = ""
+    "--enable-metrics"                   = "",
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
   }
   timeout = 15
 }
@@ -457,7 +459,8 @@ resource "aws_glue_job" "post-job" {
     "--transition_state" : "COMPLETED",
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = ""
+    "--enable-metrics"                   = "",
+    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
   }
   timeout = 15
 }

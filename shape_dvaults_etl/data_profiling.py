@@ -3,6 +3,7 @@ import boto3
 import logging
 import sys
 from cerberus import Validator
+import s3fs
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -34,8 +35,8 @@ def get_run_properties():
         Name=workflow_name, RunId=workflow_run_id
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
-    s3 = boto3.resource("s3", region_name="us-east-1")
-    config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
+    # s3 = boto3.resource("s3")
+    # config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
     config["DVAULT_PREFIX"] = {
         "dirty": "data/dirty_dvaults",
         "clean": "data/clean_dvaults",
@@ -229,30 +230,26 @@ def _get_service_name_and_type(el):
     return (service_name, service_type)
 
 
-def split_files(tmp_filename):
+def split_files(file_content):
     """
     Split agglomerated dvault from Firehose Kinesis.
 
-    :param tmp_filename: dvault filename to process.
+    :param file_content: dvault file content.
     :return data_arr: list of dictionaries representing dvault elements.
     """
+    decoder = json.JSONDecoder()
     data_arr = []
-    content = []
-    with open(tmp_filename) as f:
-        content = f.readlines()
-    content = content[0].replace('}{"version"', '}${"version"')
-    for el in content.split("}}$"):
-        # remove Luca's legacy tests
-        if "hello from vcoach" in el:
-            continue
-        # last element in array already have "}}". No need to attach it.
-        if el[-2:] != "}}":
-            el = el + "}}"
+    content_length = len(file_content)
+    decode_index = 0
+
+    while decode_index < content_length:
         try:
-            data_arr.append(json.loads(el))
-        except Exception as e:
-            logger.error(e)
-            sys.exit(0)
+            obj, decode_index = decoder.raw_decode(file_content, decode_index)
+            data_arr.append(obj)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSONDecodeError: {e}")
+            # Scan forward and keep trying to decode
+            decode_index += 1
     return data_arr
 
 
@@ -265,7 +262,7 @@ def save_dvaults(el_list, el_type, file_name, dvault_prefix, landing_bucketname)
     :param file_name: name of the dvault file.
     """
     if len(el_list) > 0:
-        s3 = boto3.resource("s3", region_name="us-east-1")
+        s3 = boto3.resource("s3")
         logger.info(f"There are {len(el_list)} {el_type.upper()} elements.")
         tmp_key = f"/tmp/{file_name}_{el_type.upper()}"
         output_key = f"{dvault_prefix.get(el_type)}/{file_name}_{el_type.upper()}"
@@ -283,15 +280,14 @@ def main():
     Run main steps in the data_profiling Glue Job.
     """
     run_props = get_run_properties()
+    s3 = s3fs.S3FileSystem()
     for obj_key in run_props["DVAULT_FILES"]:
         logger.info(f"Profiling file {obj_key}.")
         file_name = obj_key.split("/")[-1]
-        tmp_filename = "/tmp/tmp_file"
-        obj = run_props["BUCKET"].Object(obj_key)
-        obj.download_file(tmp_filename)
+        file_content = s3.cat_file(f"s3://{obj_key}").decode("utf-8")
 
         try:
-            events_arr = split_files(tmp_filename)
+            events_arr = split_files(file_content)
             dirty_dvaults = []
             clean_dvaults = []
             for event in events_arr:
