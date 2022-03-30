@@ -54,6 +54,7 @@ def get_run_properties():
         "STE_EVENT",
         "SUMMARIZER_PRED",
         "SUMMARIZER_EVENT",
+        "SIM_EVENT",
     ]
     config["SQL_DICT"] = {
         "HEADLINE_PRED": """
@@ -153,6 +154,26 @@ def get_run_properties():
                             detail.evaluation.payload.text as text,
                             time as date_time
                             from summarizer_event
+                        """,
+        "SIM_EVENT": """
+                                        select
+                                        account,
+                                        detail.id as id,
+                                        detail.partitionkey as partition_key,
+                                        detail.evaluation.prediction_id as prediction_id,
+                                        detail.evaluation.timestamp as unix_timestamp,
+                                        detail.evaluation.shape_id as shape_id,
+                                        detail.evaluation.type as event_type,
+                                        detail.evaluation.reporter as reporter,
+                                        detail.evaluation.payload.text as payload_text,
+                                        detail.evaluation.payload.query as payload_query,
+                                        detail.evaluation.payload.media_id as payload_media_id,
+                                        detail.evaluation.payload.media_type as payload_media_type,
+                                        detail.evaluation.payload.medialib as payload_medialib,
+                                        detail.evaluation.payload.image_tags as payload_tags,
+                                        detail.evaluation.payload.caption as payload_caption,
+                                        time as date_time
+                                        from sim_event
                         """,
     }
     return config

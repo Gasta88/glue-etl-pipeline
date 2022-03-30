@@ -83,7 +83,7 @@ def _recast_paragraph_to_str(el, service_name):
 
 def _convert_query_and_tags(el, service_name):
     """
-    Convert query and tags attribute in STE EVENTS from string to list for all types.
+    Convert query and tags attribute in STE and SEMANTIC_IMAGE_MATCHER EVENTS from string to list for all types.
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only STE is accepted).
@@ -104,12 +104,27 @@ def _convert_query_and_tags(el, service_name):
                 el["detail"]["evaluation"]["payload"]["tags"] = []
             else:
                 el["detail"]["evaluation"]["payload"]["tags"] = [tags]
+    if service_name == "sim":
+        query = el["detail"]["evaluation"]["payload"].get("query", None)
+        if type(query) is str:
+            if query == "null":
+                # query can be nullable, even if it's stated otherwise in the docs
+                el["detail"]["evaluation"]["payload"]["query"] = []
+            else:
+                el["detail"]["evaluation"]["payload"]["query"] = [query]
+        tags = el["detail"]["evaluation"]["payload"].get("image_tags", None)
+        if type(tags) is str:
+            if tags == "null":
+                # tags can be nullable
+                el["detail"]["evaluation"]["payload"]["image_tags"] = []
+            else:
+                el["detail"]["evaluation"]["payload"]["image_tags"] = [tags]
     return el
 
 
 def _replace_image_uri(el, service_name, media_bucketname, all_medias):
     """
-    Replace media_id attribute for STE EVENTS only to the S3 URI.
+    Replace media_id attribute for STE and SEMANTIC_IMAGE_MATCHER EVENTS only to the S3 URI.
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only STE is accepted).
@@ -117,8 +132,8 @@ def _replace_image_uri(el, service_name, media_bucketname, all_medias):
     :param al_medias: list of keys inside the S3 Shape media bucket.
     :return el: corrected element, if criterias are satisfied.
     """
-    if service_name == "ste":
-        # Skip over ADD_TAG type events since they do not have a media_id attribute.
+    if service_name in ["ste", "sim"]:
+        # Skip over ADD_TAG type events since they do not have a media_id attribute for STE
         if el["detail"]["evaluation"]["type"] != "ADD_TAG":
             media_id_value = el["detail"]["evaluation"]["payload"]["media_id"]
             media_lib_value = el["detail"]["evaluation"]["payload"]["medialib"]
@@ -154,6 +169,8 @@ def _get_service_name(el):
         if service_name is None:
             # old style EVENT dvault files
             service_name = el["detail"]["evaluation"]["prediction_id"].split("#")[-1]
+        if service_name == "semanticImageMatcher":
+            service_name = "sim"
     return service_name
 
 
@@ -167,7 +184,12 @@ def split_files(file_content):
     :return events_arr: list of JSON events extracted from the file
     """
     predictions_arr = {"summarizer": [], "headline": [], "ste": []}
-    events_arr = {"summarizer": [], "headline": [], "ste": []}
+    events_arr = {
+        "summarizer": [],
+        "headline": [],
+        "ste": [],
+        "sim": [],
+    }
     decoder = json.JSONDecoder()
     content_length = len(file_content)
     decode_index = 0
