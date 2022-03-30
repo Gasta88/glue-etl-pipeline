@@ -15,7 +15,7 @@ def upload_files(input_dir, landing_bucketname):
     :param landing_bucketname: name of the destination S3 bucket.
     """
     input_files = glob.glob(f"{input_dir}/*")
-    s3 = boto3.resource("s3")
+    s3 = boto3.resource("s3", region_name="us-east-1")
     for f in input_files:
         f_name = f.split("/")[-1]
         output_key = f"data/raw/{f_name}"
@@ -49,7 +49,7 @@ def get_workflow_status(workflow_name, run_id):
     :param run_id: id of the Glue workflow run.
     :return status: current status of the workflow run.
     """
-    glue = boto3.client("glue")
+    glue = boto3.client("glue", region_name="us-east-1")
     try:
         response = glue.get_workflow_run(Name=workflow_name, RunId=run_id)
         return response["Run"]["Status"]
