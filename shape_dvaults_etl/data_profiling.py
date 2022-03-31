@@ -95,7 +95,7 @@ def run_data_profiling(event, service_type):
             "service": {
                 "type": "string",
                 "required": True,
-                "allowed": {"summarizer", "headline", "ste"},
+                "allowed": {"summarizer", "headline", "ste", "semanticImageMatcher"},
             },
             "timestamp": {"type": "integer", "required": True},
             "reporter": {
@@ -112,6 +112,7 @@ def run_data_profiling(event, service_type):
                     "PUBLISH",
                     "DELETE",
                     "DELETE_SLIDE",
+                    "SELECT_IMAGE",
                 ],
             },
         }

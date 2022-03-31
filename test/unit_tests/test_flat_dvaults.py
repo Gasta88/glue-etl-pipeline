@@ -29,13 +29,6 @@ class FlatDvaultTestCase(unittest.TestCase):
         """Initialize the test settings."""
         warnings.filterwarnings("ignore", category=ResourceWarning)
         warnings.filterwarnings("ignore", category=DeprecationWarning)
-        # session = boto3.Session(profile_name="default")
-        # s3 = session.resource(
-        #     "s3",
-        #     region_name="us-east-1",
-        #     aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", None),
-        #     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", None),
-        # )
         s3 = boto3.resource("s3")
         self.media_bucketname = MEDIA_BUCKETNAME
         media_bucket = s3.Bucket(MEDIA_BUCKETNAME)
