@@ -11,7 +11,6 @@ stages:
   - unit-tests
   - integration-tests
   - deploy
-  - doc
 
 variables:
   DOCKER_DRIVER: "overlay2"
@@ -122,3 +121,16 @@ e2e_test:
     - terraform destroy --auto-approve
     - terraform workspace select default
     - terraform workspace delete -force e2e-test
+
+# run live deployment
+prod_deploy:
+  only:
+    - master
+  stage: deploy
+  before_script:
+    - *poetry_template
+  script:
+    - cd deployments
+    - terraform init
+    - terraform workspace select prod || terraform workspace new prod
+    - terraform apply --auto-approve --parallelism=1

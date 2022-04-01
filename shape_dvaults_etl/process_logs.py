@@ -111,7 +111,7 @@ def get_valid_workflow_run(workflow_name, workflow_run_id):
     return workflow_details
 
 
-def get_log_entries(workflow_details, log_group_name="/aws-glue/jobs/output"):
+def get_log_entries(workflow_details, log_group_name="/aws-glue/python-jobs/output"):
     """
     Extract log entries from the PROFILER and attach them to the workflow details.
 
@@ -191,9 +191,6 @@ def send_log_to_es(
     :param nice_logs: formatted logs to create the index.
     :param index_name: string that represent the name of the ES index.
     """
-    ci_cd = os.environ.get("CI_CD", None)
-    if ci_cd is not None:
-        index_name = "dvault_logs_test"
     es = Elasticsearch(es_url)
     if not es.ping():
         logger.error(f"No cluster available at {es_url}")
@@ -209,6 +206,10 @@ def main():
     """
     Run main steps in the process_logs Glue Job.
     """
+    # Skip job run if running CI_CD pipeline
+    ci_cd = os.environ.get("CI_CD", None)
+    if ci_cd is not None:
+        return
     run_props = get_run_properties()
     workflow_name = run_props["workflow_name"]
     workflow_run_id = run_props["workflow_run_id"]

@@ -18,6 +18,26 @@ terraform {
   }
 }
 
+#--------------------------- Locals declaration
+locals {
+  env = {
+    dev = {
+      source_bucket = "dvault-staging"
+      media_bucket  = "shape-media-library-staging"
+    }
+    e2e-test = {
+      source_bucket = "None"
+      media_bucket  = "shape-media-library-staging"
+    }
+    prod = {
+      source_bucket = "ai-dvault-sync-prod-eu"
+      media_bucket  = "shape-media-library-sync-prod-eu"
+    }
+  }
+  environmentvars = contains(keys(local.env), terraform.workspace) ? terraform.workspace : "dev"
+  workspace       = merge(local.env["dev"], local.env[local.environmentvars])
+}
+
 #--------------------------- S3 and S3 objects
 resource "aws_s3_bucket" "dvault-bucket" {
   bucket = "dvault-landing-${terraform.workspace}"

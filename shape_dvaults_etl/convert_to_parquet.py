@@ -201,8 +201,8 @@ def get_spark_dataframe(spark, table_name, landing_bucketname, all_jsons):
         logger.info(f'Converting: {"; ".join(file_names)}')
         df = spark.read.json(file_names)
     else:
-        logger.warn(f"No available files for {table_name}")
-        sys.exit(1)
+        logger.warning(f"No available files for {table_name}")
+        return None
     return df
 
 
@@ -239,6 +239,8 @@ def main():
             f's3://{run_props["LANDING_BUCKETNAME"]}',
             run_props["ALL_JSONS"],
         )
+        if df is None:
+            continue
         refined_df = get_refined_dataframe(
             run_props["SPARK"], df, run_props["SQL_DICT"], table_name
         )
