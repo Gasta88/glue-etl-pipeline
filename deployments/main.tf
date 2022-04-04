@@ -25,7 +25,7 @@ locals {
       source_bucket = "dvault-staging"
       media_bucket  = "shape-media-library-staging"
     }
-    e2e-test = {
+    e2e_test = {
       source_bucket = "None"
       media_bucket  = "shape-media-library-staging"
     }
