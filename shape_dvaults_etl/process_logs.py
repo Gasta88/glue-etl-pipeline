@@ -27,7 +27,8 @@ def get_run_properties():
     )
     config["workflow_name"] = args["WORKFLOW_NAME"]
     config["workflow_run_id"] = args["WORKFLOW_RUN_ID"]
-    config["ENVIRONMENT"] = args["WORKFLOW_NAME"].split("-")[-1]
+    env = args["WORKFLOW_NAME"].split("-")[-1]
+    config["ENVIRONMENT"] = f"e2e-{env}" if env == "test" else env
     return config
 
 
@@ -207,7 +208,7 @@ def main():
     """
     run_props = get_run_properties()
     # Skip job run if running end-to-end test pipeline
-    if run_props["ENVIRONMENT"] == "e2e_test":
+    if run_props["ENVIRONMENT"] == "e2e-test":
         return
     workflow_name = run_props["workflow_name"]
     workflow_run_id = run_props["workflow_run_id"]

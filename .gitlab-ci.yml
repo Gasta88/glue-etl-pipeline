@@ -111,7 +111,7 @@ e2e_test:
   script:
     - cd deployments
     - terraform init
-    - terraform workspace select e2e_test || terraform workspace new e2e_test
+    - terraform workspace select e2e-test || terraform workspace new e2e-test
     - terraform apply --auto-approve --parallelism=1
     - cd ../test/end_to_end_tests
     - python run_e2e_test.py
@@ -119,7 +119,7 @@ e2e_test:
   #   - cd deployments
   #   - terraform destroy --auto-approve
   #   - terraform workspace select default
-  #   - terraform workspace delete -force e2e_test
+  #   - terraform workspace delete -force e2e-test
 
 # run live deployment
 prod_deploy:
