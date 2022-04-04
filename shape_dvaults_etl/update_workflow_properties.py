@@ -2,7 +2,6 @@ import boto3
 import sys
 from awsglue.utils import getResolvedOptions
 import logging
-import os
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -110,6 +109,11 @@ def main():
     workflow_name = args["WORKFLOW_NAME"]
     workflow_run_id = args["WORKFLOW_RUN_ID"]
     state_to_set = args["transition_state"]
+    env = (
+        f'e2e-{args["WORKFLOW_NAME"].split("-")[-1]}'
+        if args["WORKFLOW_NAME"].split("-")[-1] == "test"
+        else args["WORKFLOW_NAME"].split("-")[-1]
+    )
 
     logger.info(f"Setting workflow  state to {state_to_set}.")
 
@@ -121,9 +125,8 @@ def main():
 
     run_properties["run_state"] = state_to_set
     if state_to_set == "STARTED":
-        # Handle different behaviour when running PROD pipeline against CI_CD pipeline
-        ci_cd = os.environ.get("CI_CD", None)
-        if ci_cd is not None:
+        # Handle different behaviour when running PROD pipeline against E2E-TEST pipeline
+        if env == "e2e-test":
             new_dvault_files = get_dvaults_from_source(
                 run_properties["landing_bucketname"]
             )
