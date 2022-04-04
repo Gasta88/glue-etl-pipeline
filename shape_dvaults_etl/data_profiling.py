@@ -285,9 +285,7 @@ def main():
     for obj_key in run_props["DVAULT_FILES"]:
         logger.info(f"Profiling file {obj_key}.")
         file_name = obj_key.split("/")[-1]
-        file_content = s3.cat_file(f"s3://{obj_key}").decode(
-            encoding="utf-8", ignore="ignore"
-        )
+        file_content = s3.cat_file(f"s3://{obj_key}").decode("utf-8", "ignore")
 
         events_arr = split_files(file_content)
         dirty_dvaults = []
