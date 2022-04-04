@@ -212,7 +212,7 @@ resource "aws_glue_workflow" "dvault-glue-workflow" {
 
 resource "aws_glue_trigger" "prejob-trigger" {
   name          = "dvault-pre-job-trigger-${terraform.workspace}"
-  schedule      = "cron(0 * * * MON-FRI *)"
+  schedule      = "cron(0 * ? * MON-FRI *)"
   type          = "SCHEDULED"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
   enabled       = false
