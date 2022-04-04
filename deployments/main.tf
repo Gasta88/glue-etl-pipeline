@@ -147,14 +147,14 @@ resource "aws_iam_policy" "s3-data-policy" {
           "s3:GetObject", "s3:PutObject"
         ]
         Effect   = "Allow"
-        Resource = ["arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/*", "arn:aws:s3:::dvault-staging/*"]
+        Resource = ["arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/*", "arn:aws:s3:::${local.workspace["source_bucket"]}/*"]
       },
       {
         Action = [
           "s3:ListBucket"
         ]
         Effect   = "Allow"
-        Resource = ["arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}", "arn:aws:s3:::dvault-staging"]
+        Resource = ["arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}", "arn:aws:s3:::${local.workspace["source_bucket"]}"]
       },
       {
         Action = [
@@ -204,9 +204,9 @@ resource "aws_glue_workflow" "dvault-glue-workflow" {
   name        = "s3-batch-glue-dvault-workflow-${terraform.workspace}"
   description = "Glue workflow triggered by schedule or on-demand"
   default_run_properties = {
-    "source_bucketname" : "dvault-staging"
+    "source_bucketname" : "${local.workspace["source_bucket"]}"
     "landing_bucketname" : aws_s3_bucket.dvault-bucket.bucket,
-    "media_bucketname" : "shape-media-library-staging"
+    "media_bucketname" : "${local.workspace["media_bucket"]}"
   }
 }
 
