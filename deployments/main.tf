@@ -215,7 +215,6 @@ resource "aws_glue_trigger" "prejob-trigger" {
   schedule      = "cron(0 * ? * MON-FRI *)"
   type          = "SCHEDULED"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
-  enabled       = false
   actions {
     job_name = aws_glue_job.pre-job.name
   }

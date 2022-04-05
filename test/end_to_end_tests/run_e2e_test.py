@@ -4,7 +4,6 @@ import sys
 import time
 import pyarrow.parquet as pq
 from elasticsearch import Elasticsearch
-import os
 
 
 def upload_files(input_dir, landing_bucketname):
@@ -97,25 +96,6 @@ def compare_files(landing_bucketname, expected_parquet_files):
     return results
 
 
-def clean_up_es_index(
-    es_url="https://search-ai-elasticsearch-6-public-whkzoh3jmwiwidqwvzag2jxse4.us-east-1.es.amazonaws.com",
-    index_name="dvault_logs",
-):
-    """
-    During E2E the dvault_logs index must be purged.
-
-    :param es_url: URL of the ElasticSearch domain.
-    """
-    ci_cd = os.environ.get("CI_CD", None)
-    if ci_cd is not None:
-        index_name = "dvault_logs_test"
-    es = Elasticsearch(es_url)
-    if not es.ping():
-        sys.exit(1)
-    es.indices.delete(index=index_name, ignore=[400, 404])
-    return
-
-
 def main():
     """
     Run main steps in the run_etl script.
@@ -146,7 +126,6 @@ def main():
     else:
         print("Wrong status to finish the workflow.")
         sys.exit(1)
-    clean_up_es_index()
 
 
 if __name__ == "__main__":
