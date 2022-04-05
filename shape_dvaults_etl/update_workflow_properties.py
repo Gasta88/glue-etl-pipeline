@@ -93,7 +93,10 @@ def get_dvaults_from_s3(landing_bucketname):
     bucket = s3.Bucket(landing_bucketname)
     dvaults = []
     logger.info("Get all available dvault files.")
-    dvaults = [f"{landing_bucketname}/{obj.key}" for obj in bucket.objects.all()]
+    dvaults = [
+        f"{landing_bucketname}/{obj.key}"
+        for obj in bucket.objects.filter(Prefix="data/raw/")
+    ]
     logger.info(f"Found {len(dvaults)} new dvaults.")
     return dvaults
 

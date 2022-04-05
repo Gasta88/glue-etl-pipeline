@@ -1,4 +1,4 @@
-[![coverage report](https://git.docebo.info/ai/shape-dvault/badges/<branch>/coverage.svg)](https://git.docebo.info/ai/shape-dvault/commits/<branch>)
+[![coverage report](https://git.docebo.info/ai/shape-dvault/badges/%{default_branch}/coverage.svg)](https://git.docebo.info/ai/shape-dvault/commits/%{default_branch})
 
 # Shape dvaults ETL pipeline
 
@@ -57,7 +57,7 @@ In the first version of the ETL pipeline, the data scientist must investigate th
 
 In order to keep an eye into the data movement inside the ETL pipeline, the final step of a succesful workflow run is to load the data-profiling logs into an [ElastichSearch cluster](https://search-ai-elasticsearch-6-public-whkzoh3jmwiwidqwvzag2jxse4.us-east-1.es.amazonaws.com).
 
-A Kibana board is provided to inspect common metrics while data is profiled inside the pipeline. The index name inside ElasticSeach is _dvault*logs*{env}_, where _{env}_ represent the differnet version of the pipeline (ex: dev, prod, e2e-test).
+A Kibana board is provided to inspect common metrics while data is profiled inside the pipeline. The index name inside ElasticSeach is _dvault_logs\_{env}_, where _{env}_ represent the different version of the pipeline (ex: dev, prod, e2e-test).
 
 ## Future improvements
 
