@@ -130,9 +130,7 @@ def main():
     if state_to_set == "STARTED":
         # Handle different behaviour when running PROD pipeline against E2E-TEST pipeline
         if env == "e2e-test":
-            new_dvault_files = get_dvaults_from_source(
-                run_properties["landing_bucketname"]
-            )
+            new_dvault_files = get_dvaults_from_s3(run_properties["landing_bucketname"])
         else:
             new_dvault_files = get_dvaults_from_source(
                 run_properties["source_bucketname"]
