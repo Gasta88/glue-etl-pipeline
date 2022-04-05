@@ -18,6 +18,26 @@ terraform {
   }
 }
 
+#--------------------------- Locals declaration
+locals {
+  env = {
+    dev = {
+      source_bucket = "dvault-staging"
+      media_bucket  = "shape-media-library-staging"
+    }
+    e2e-test = {
+      source_bucket = "None"
+      media_bucket  = "shape-media-library-staging"
+    }
+    prod = {
+      source_bucket = "ai-dvault-sync-prod-eu"
+      media_bucket  = "shape-media-library-sync-prod-eu"
+    }
+  }
+  environmentvars = contains(keys(local.env), terraform.workspace) ? terraform.workspace : "dev"
+  workspace       = merge(local.env["dev"], local.env[local.environmentvars])
+}
+
 #--------------------------- S3 and S3 objects
 resource "aws_s3_bucket" "dvault-bucket" {
   bucket = "dvault-landing-${terraform.workspace}"
@@ -42,6 +62,18 @@ resource "aws_s3_bucket" "dvault-bucket" {
 
     expiration {
       days                         = 30
+      expired_object_delete_marker = false
+    }
+  }
+
+  lifecycle_rule {
+    abort_incomplete_multipart_upload_days = 0
+    enabled                                = true
+    id                                     = "dirty-dvaults-clean-up"
+    prefix                                 = "data/dirty_dvaults/"
+
+    expiration {
+      days                         = 90
       expired_object_delete_marker = false
     }
   }
@@ -115,14 +147,14 @@ resource "aws_iam_policy" "s3-data-policy" {
           "s3:GetObject", "s3:PutObject"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/*"
+        Resource = ["arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}/*", "arn:aws:s3:::${local.workspace["source_bucket"]}/*"]
       },
       {
         Action = [
           "s3:ListBucket"
         ]
         Effect   = "Allow"
-        Resource = "arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}"
+        Resource = ["arn:aws:s3:::${aws_s3_bucket.dvault-bucket.bucket}", "arn:aws:s3:::${local.workspace["source_bucket"]}"]
       },
       {
         Action = [
@@ -172,14 +204,16 @@ resource "aws_glue_workflow" "dvault-glue-workflow" {
   name        = "s3-batch-glue-dvault-workflow-${terraform.workspace}"
   description = "Glue workflow triggered by schedule or on-demand"
   default_run_properties = {
+    "source_bucketname" : "${local.workspace["source_bucket"]}"
     "landing_bucketname" : aws_s3_bucket.dvault-bucket.bucket,
-    "media_bucketname" : "shape-media-library-staging"
+    "media_bucketname" : "${local.workspace["media_bucket"]}"
   }
 }
 
 resource "aws_glue_trigger" "prejob-trigger" {
   name          = "dvault-pre-job-trigger-${terraform.workspace}"
-  type          = "ON_DEMAND"
+  schedule      = "cron(0 * ? * MON-FRI *)"
+  type          = "SCHEDULED"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
   enabled       = false
   actions {
@@ -206,8 +240,7 @@ resource "aws_glue_job" "pre-job" {
     "--transition_state" : "STARTED",
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = "",
-    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
+    "--enable-metrics"                   = ""
   }
   timeout = 15
 }
@@ -459,8 +492,7 @@ resource "aws_glue_job" "post-job" {
     "--transition_state" : "COMPLETED",
     "--enable-continuous-cloudwatch-log" = "true",
     "--enable-continuous-log-filter"     = "true",
-    "--enable-metrics"                   = "",
-    "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
+    "--enable-metrics"                   = ""
   }
   timeout = 15
 }

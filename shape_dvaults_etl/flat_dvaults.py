@@ -52,13 +52,17 @@ def _recast_score_to_float(el, service_name):
     :param service_name: element service name (only SUMMARIZER is accepted).
     """
     if service_name == "summarizer":
-        for i, sentence_score in enumerate(
-            el["detail"]["prediction"]["input"]["sentences_scores"]
-        ):
-            if type(sentence_score["score"]) is int:
-                el["detail"]["prediction"]["input"]["sentences_scores"][i][
-                    "score"
-                ] = float(sentence_score["score"])
+        # If attribute is missing (due to undocumented reasons), return None
+        if "sentences_scores" in el["detail"]["prediction"]["input"]:
+            for i, sentence_score in enumerate(
+                el["detail"]["prediction"]["input"]["sentences_scores"]
+            ):
+                if type(sentence_score["score"]) is int:
+                    el["detail"]["prediction"]["input"]["sentences_scores"][i][
+                        "score"
+                    ] = float(sentence_score["score"])
+        else:
+            el["detail"]["prediction"]["input"]["sentences_scores"] = None
     return el
 
 
@@ -78,6 +82,34 @@ def _recast_paragraph_to_str(el, service_name):
             paragraph = el["detail"]["evaluation"]["payload"].get("paragraph", None)
             if type(paragraph) is int:
                 el["detail"]["evaluation"]["payload"]["paragraph"] = str(paragraph)
+    return el
+
+
+def _populate_metadata_field(el, service_name):
+    """
+    Enable metadata field in SUMMARIZER PREDICTIONS.
+
+    :param el: dictionary that represent the event.
+    :param service_name: element service name (only SUMMARIZER is accepted).
+    :return el: corrected element, if criterias are satisfied.
+    """
+    if service_name == "summarizer":
+        if "metadata" not in el["detail"]["prediction"]["output"]:
+            el["detail"]["prediction"]["output"]["metadata"] = None
+    return el
+
+
+def _populate_skipped_paragraphs_field(el, service_name):
+    """
+    Enable skipped_paragraphs field in SUMMARIZER PREDICTIONS.
+
+    :param el: dictionary that represent the event.
+    :param service_name: element service name (only SUMMARIZER is accepted).
+    :return el: corrected element, if criterias are satisfied.
+    """
+    if service_name == "summarizer":
+        if "skipped_paragraphs" not in el["detail"]["prediction"]["output"]:
+            el["detail"]["prediction"]["output"]["skipped_paragraphs"] = None
     return el
 
 
@@ -135,22 +167,29 @@ def _replace_image_uri(el, service_name, media_bucketname, all_medias):
     if service_name in ["ste", "sim"]:
         # Skip over ADD_TAG type events since they do not have a media_id attribute for STE
         if el["detail"]["evaluation"]["type"] != "ADD_TAG":
-            media_id_value = el["detail"]["evaluation"]["payload"]["media_id"]
-            media_lib_value = el["detail"]["evaluation"]["payload"]["medialib"]
-            media_lookup_value = f"{media_lib_value}/{media_id_value}"
-            media_uri_value = [
-                f"s3://{media_bucketname}/{key}"
-                for key in all_medias
-                if media_lookup_value in key
-            ]
-            if media_uri_value == []:
-                logger.warn(f"No media with id {media_id_value} found in media bucket.")
-                media_uri_value = [media_id_value]
-            if len(media_uri_value) > 1:
-                logger.info(
-                    f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
-                )
-            el["detail"]["evaluation"]["payload"]["media_id"] = media_uri_value[0]
+            # If attributes are missing (for some undocumented reasons), do not alter dvault event
+            if (
+                "media_id" in el["detail"]["evaluation"]["payload"]
+                and "medialib" in el["detail"]["evaluation"]["payload"]
+            ):
+                media_id_value = el["detail"]["evaluation"]["payload"]["media_id"]
+                media_lib_value = el["detail"]["evaluation"]["payload"]["medialib"]
+                media_lookup_value = f"{media_lib_value}/{media_id_value}"
+                media_uri_value = [
+                    f"s3://{media_bucketname}/{key}"
+                    for key in all_medias
+                    if media_lookup_value in key
+                ]
+                if media_uri_value == []:
+                    logger.warn(
+                        f"No media with id {media_id_value} found in media bucket."
+                    )
+                    media_uri_value = [media_id_value]
+                if len(media_uri_value) > 1:
+                    logger.info(
+                        f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
+                    )
+                el["detail"]["evaluation"]["payload"]["media_id"] = media_uri_value[0]
     return el
 
 
@@ -267,9 +306,15 @@ def main():
             logger.info("Correcting predictions elements.")
             corrected_predictions_arr = {}
             for service_name, elements in predictions_arr.items():
-                corrected_predictions_arr[service_name] = [
-                    _recast_score_to_float(el, service_name) for el in elements
-                ]
+                new_elements = []
+                for el in elements:
+                    new_el_0 = _recast_score_to_float(el, service_name)
+                    new_el_1 = _populate_metadata_field(new_el_0, service_name)
+                    new_el_2 = _populate_skipped_paragraphs_field(
+                        new_el_1, service_name
+                    )
+                    new_elements.append(new_el_2)
+                corrected_predictions_arr[service_name] = new_elements
 
             logger.info("Correcting events elements.")
             corrected_events_arr = {}
@@ -291,6 +336,7 @@ def main():
             logger.error(
                 "Something wrong with extraction of prediction/event from file. Process stopped."
             )
+            logger.error(e)
             sys.exit(1)
 
         save_flat_json(

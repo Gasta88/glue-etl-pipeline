@@ -1,10 +1,8 @@
 import boto3
 import logging
 import sys
-import json
 from elasticsearch import Elasticsearch
 from datetime import datetime
-import os
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -29,6 +27,8 @@ def get_run_properties():
     )
     config["workflow_name"] = args["WORKFLOW_NAME"]
     config["workflow_run_id"] = args["WORKFLOW_RUN_ID"]
+    env = args["WORKFLOW_NAME"].split("-")[-1]
+    config["ENVIRONMENT"] = f"e2e-{env}" if env == "test" else env
     return config
 
 
@@ -111,7 +111,7 @@ def get_valid_workflow_run(workflow_name, workflow_run_id):
     return workflow_details
 
 
-def get_log_entries(workflow_details, log_group_name="/aws-glue/jobs/output"):
+def get_log_entries(workflow_details, log_group_name="/aws-glue/python-jobs/output"):
     """
     Extract log entries from the PROFILER and attach them to the workflow details.
 
@@ -181,8 +181,8 @@ def format_log_entries(workflow_logs):
 
 def send_log_to_es(
     nice_logs,
+    index_name,
     es_url="https://search-ai-elasticsearch-6-public-whkzoh3jmwiwidqwvzag2jxse4.us-east-1.es.amazonaws.com",
-    index_name="dvault_logs",
 ):
     """
     Send formatted logs to ElasticSearch cluster.
@@ -191,9 +191,6 @@ def send_log_to_es(
     :param nice_logs: formatted logs to create the index.
     :param index_name: string that represent the name of the ES index.
     """
-    ci_cd = os.environ.get("CI_CD", None)
-    if ci_cd is not None:
-        index_name = "dvault_logs_test"
     es = Elasticsearch(es_url)
     if not es.ping():
         logger.error(f"No cluster available at {es_url}")
@@ -210,8 +207,12 @@ def main():
     Run main steps in the process_logs Glue Job.
     """
     run_props = get_run_properties()
+    # Skip job run if running end-to-end test pipeline
+    if run_props["ENVIRONMENT"] == "e2e-test":
+        return
     workflow_name = run_props["workflow_name"]
     workflow_run_id = run_props["workflow_run_id"]
+    index_name = f'dvault_logs_{run_props["ENVIRONMENT"]}'
     logger.info(f"Get all info on workflow run {workflow_run_id}.")
     workflow_run = get_valid_workflow_run(workflow_name, workflow_run_id)
     logger.info("Get all log entries.")
@@ -219,7 +220,7 @@ def main():
     logger.info("Format logs.")
     formatted_log_entries = format_log_entries(workflow_logs)
     logger.info("Write logs into ES.")
-    send_log_to_es(formatted_log_entries)
+    send_log_to_es(formatted_log_entries, index_name)
     return
 
 
