@@ -32,28 +32,6 @@ def get_run_properties():
     return config
 
 
-def _get_job_name(root_name="dvault-profile"):
-    """
-    Retieve Glue job name that generates the logs.
-
-    :param root_name: partial job name to search.
-    :return job_name: Glue job name that generates the logs for ES.
-    """
-    glue = boto3.client("glue")
-    response = glue.get_jobs()
-    all_jobs = response["Jobs"]
-    next_token = response.get("NextToken", None)
-    while next_token is not None:
-        response = glue.get_jobs(NextToken=next_token)
-        all_jobs += response["Jobs"]
-        next_token = all_jobs.get("NextToken", None)
-    selected_job = [j["Name"] for j in all_jobs if root_name in j["Name"]]
-    if len(selected_job) > 1:
-        logger.error("Multiple jobs found; only one should match.")
-        sys.exit(1)
-    return selected_job[0]
-
-
 def _is_workflow_run_valid(workflow_run):
     """
     Check if workflow run is valid.
@@ -86,16 +64,17 @@ def _extract_workflow_details(workflow_run, job_name):
     return workflow_details
 
 
-def get_valid_workflow_run(workflow_name, workflow_run_id):
+def get_valid_workflow_run(workflow_name, workflow_run_id, env):
     """
     Return all valid workflow runs from CloudWatch by iterating through pages.
 
     :param workflow_name: name of the current workflow to capture.
     :param workflow_run_id: is of the current workflow run to capture.
+    :param env: name of the current environment
     :return workflow_details: details of valid Glue workflow.
     """
     glue = boto3.client("glue")
-    job_name = _get_job_name()
+    job_name = f"dvault-profile-job-{env}"
     try:
         workflow_run = glue.get_workflow_run(
             Name=workflow_name, RunId=workflow_run_id, IncludeGraph=True
@@ -214,7 +193,9 @@ def main():
     workflow_run_id = run_props["workflow_run_id"]
     index_name = f'dvault_logs_{run_props["ENVIRONMENT"]}'
     logger.info(f"Get all info on workflow run {workflow_run_id}.")
-    workflow_run = get_valid_workflow_run(workflow_name, workflow_run_id)
+    workflow_run = get_valid_workflow_run(
+        workflow_name, workflow_run_id, run_props["ENVIRONMENT"]
+    )
     logger.info("Get all log entries.")
     workflow_logs = get_log_entries(workflow_run)
     logger.info("Format logs.")
