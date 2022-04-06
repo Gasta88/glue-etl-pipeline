@@ -178,11 +178,25 @@ resource "aws_iam_policy" "s3-data-policy" {
         Resource = "arn:aws:logs:*:*:log-group:/aws-glue/python-jobs/output:*"
       },
       {
-        "Action" : [
+        Action = [
           "es:*"
         ],
-        "Effect" : "Allow",
-        "Resource" : "arn:aws:es:*:*:domain/ai-elasticsearch-6-public/*"
+        Effect   = "Allow",
+        Resource = "arn:aws:es:*:*:domain/ai-elasticsearch-6-public/*"
+      },
+      {
+        Effect = "Allow",
+        Action = [
+          "kms:Decrypt",
+          "kms:Encrypt",
+          "kms:CreateGrant"
+        ],
+        Resource = "arn:aws:kms:eu-west-1:228718274899:key/14ab5d75-0d44-4437-afc2-54d16377bf9f"
+      },
+      {
+        Effect   = "Allow",
+        Action   = "kms:ListAliases",
+        Resource = "*"
       }
     ]
   })
