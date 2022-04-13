@@ -54,17 +54,6 @@ resource "aws_s3_bucket" "dvault-bucket" {
     prevent_destroy = false
   }
 
-  lifecycle_rule {
-    abort_incomplete_multipart_upload_days = 0
-    enabled                                = true
-    id                                     = "spark-logs-clean-up"
-    prefix                                 = "spark-logs/"
-
-    expiration {
-      days                         = 30
-      expired_object_delete_marker = false
-    }
-  }
 
   lifecycle_rule {
     abort_incomplete_multipart_upload_days = 0
@@ -101,12 +90,6 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
   etag     = filemd5("../dependencies/${each.value}")
 }
 
-resource "aws_s3_bucket_object" "sparkui-folder" {
-  bucket = aws_s3_bucket.dvault-bucket.bucket
-  acl    = "private"
-  key    = "spark-logs/"
-  source = "/dev/null"
-}
 
 
 #--------------------------- AWS Glue resources
@@ -446,7 +429,7 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",
     "--enable-spark-ui"                  = "true",
-    "--spark-event-logs-path"            = "s3://${aws_s3_bucket.dvault-bucket.bucket}/spark-logs/"
+    "--spark-event-logs-path"            = "s3://spark-history-server-logs-fghjrt/"
   }
   timeout = 15
 }
