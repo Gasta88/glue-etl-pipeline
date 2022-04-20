@@ -35,8 +35,6 @@ def get_run_properties():
         Name=workflow_name, RunId=workflow_run_id
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
-    # s3 = boto3.resource("s3")
-    # config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
     config["DVAULT_PREFIX"] = {
         "dirty": "data/dirty_dvaults",
         "clean": "data/clean_dvaults",
@@ -69,7 +67,7 @@ def run_data_profiling(event, service_type):
             "reporter": {
                 "type": "string",
                 "required": True,
-                "allowed": ["user", "builder"],
+                "allowed": ["user", "builder", "aws_rekognition"],
             },
             "type": {
                 "type": "string",
@@ -80,6 +78,7 @@ def run_data_profiling(event, service_type):
                     "PUBLISH",
                     "DELETE",
                     "DELETE SLIDE",
+                    "TAG_IMAGE",
                 ],
             },
         }
@@ -95,13 +94,19 @@ def run_data_profiling(event, service_type):
             "service": {
                 "type": "string",
                 "required": True,
-                "allowed": {"summarizer", "headline", "ste", "semanticImageMatcher"},
+                "allowed": {
+                    "summarizer",
+                    "headline",
+                    "ste",
+                    "semanticImageMatcher",
+                    "imageTagging",
+                },
             },
             "timestamp": {"type": "integer", "required": True},
             "reporter": {
                 "type": "string",
                 "required": True,
-                "allowed": ["user", "builder"],
+                "allowed": ["user", "builder", "aws_rekognition"],
             },
             "type": {
                 "type": "string",
@@ -113,6 +118,7 @@ def run_data_profiling(event, service_type):
                     "DELETE",
                     "DELETE_SLIDE",
                     "SELECT_IMAGE",
+                    "TAG_IMAGE",
                 ],
             },
         }

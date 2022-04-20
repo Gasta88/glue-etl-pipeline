@@ -68,7 +68,7 @@ resource "aws_s3_bucket" "dvault-bucket" {
   }
 
   versioning {
-    enabled = true
+    enabled = false
   }
 }
 

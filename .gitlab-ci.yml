@@ -122,7 +122,6 @@ e2e_test:
     - python run_e2e_test.py
   after_script:
     - cd deployment
-    - aws s3 rb s3://dvault-landing-e2e-test --force
     - terraform destroy --auto-approve
     - terraform workspace select default
     - terraform workspace delete -force e2e-test
