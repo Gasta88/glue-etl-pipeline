@@ -413,7 +413,7 @@ resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
 resource "aws_glue_job" "convert-to-parquet-job" {
   name              = "dvault-convert-to-parquet-job-${terraform.workspace}"
   description       = "Glue job that converts JSON to Parquet"
-  glue_version      = "2.0"
+  glue_version      = "3.0"
   role_arn          = aws_iam_role.glue-role.arn
   number_of_workers = 2
   worker_type       = "G.1X"
@@ -429,7 +429,8 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",
     "--enable-spark-ui"                  = "true",
-    "--spark-event-logs-path"            = "s3://spark-history-server-logs-fghjrt/"
+    "--spark-event-logs-path"            = "s3://spark-history-server-logs-fghjrt/",
+    "--enable-auto-scaling" : "true"
   }
   timeout = 15
 }
