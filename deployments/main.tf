@@ -54,17 +54,6 @@ resource "aws_s3_bucket" "dvault-bucket" {
     prevent_destroy = false
   }
 
-  lifecycle_rule {
-    abort_incomplete_multipart_upload_days = 0
-    enabled                                = true
-    id                                     = "spark-logs-clean-up"
-    prefix                                 = "spark-logs/"
-
-    expiration {
-      days                         = 30
-      expired_object_delete_marker = false
-    }
-  }
 
   lifecycle_rule {
     abort_incomplete_multipart_upload_days = 0
@@ -79,7 +68,7 @@ resource "aws_s3_bucket" "dvault-bucket" {
   }
 
   versioning {
-    enabled = true
+    enabled = false
   }
 }
 
@@ -101,12 +90,6 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
   etag     = filemd5("../dependencies/${each.value}")
 }
 
-resource "aws_s3_bucket_object" "sparkui-folder" {
-  bucket = aws_s3_bucket.dvault-bucket.bucket
-  acl    = "private"
-  key    = "spark-logs/"
-  source = "/dev/null"
-}
 
 
 #--------------------------- AWS Glue resources
@@ -430,7 +413,7 @@ resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
 resource "aws_glue_job" "convert-to-parquet-job" {
   name              = "dvault-convert-to-parquet-job-${terraform.workspace}"
   description       = "Glue job that converts JSON to Parquet"
-  glue_version      = "2.0"
+  glue_version      = "3.0"
   role_arn          = aws_iam_role.glue-role.arn
   number_of_workers = 2
   worker_type       = "G.1X"
@@ -446,7 +429,8 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = "",
     "--enable-spark-ui"                  = "true",
-    "--spark-event-logs-path"            = "s3://${aws_s3_bucket.dvault-bucket.bucket}/spark-logs/"
+    "--spark-event-logs-path"            = "s3://spark-history-server-logs-fghjrt/",
+    "--enable-auto-scaling" : "true"
   }
   timeout = 15
 }

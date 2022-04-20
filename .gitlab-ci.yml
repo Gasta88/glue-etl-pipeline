@@ -78,6 +78,7 @@ terraform_unit_test:
     - cd ../test/unit_tests
     - python -m unittest check_terraform_plan.py
   after_script:
+    - cd deployment
     - terraform workspace select default
     - terraform workspace delete -force unit-test
 
@@ -97,6 +98,10 @@ python_unit_test:
     - poetry run coverage report -m --omit=test/unit_tests/check_terraform_plan.py
     - poetry run coverage-badge
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
+  after_script:
+    - cd deployments
+    - terraform workspace select default
+    - terraform workspace delete -force unit-test
 
 # run end-to-end tests
 e2e_test:

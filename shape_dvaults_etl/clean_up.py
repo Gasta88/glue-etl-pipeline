@@ -38,9 +38,6 @@ def main():
     Run main steps in the flat_dvaults Glue Job.
     """
     logger.info("Starting environment clean-up.")
-    # for key in DVAULT_FILES:
-    #     s3.Object(bucket_name, key).delete()
-    # logger.info("data/raw/ prefix clean-up is complete.")
     run_props = get_run_properties()
     s3 = boto3.resource("s3", region_name="us-east-1")
     bucket = s3.Bucket(run_props["BUCKET_NAME"])
