@@ -37,9 +37,6 @@ def get_run_properties():
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
     config["MEDIA_BUCKETNAME"] = run_properties["media_bucketname"]
     s3 = s3fs.S3FileSystem()
-    # config["BUCKET"] = s3.Bucket(config["LANDING_BUCKETNAME"])
-    # media_bucket = s3.Bucket(config["MEDIA_BUCKETNAME"])
-    # config["ALL_MEDIAS"] = [obj.key for obj in list(media_bucket.objects.all())]
     config["ALL_MEDIAS"] = s3.glob(f's3://{run_properties["media_bucketname"]}/*/*/*')
     return config
 
@@ -115,7 +112,7 @@ def _populate_skipped_paragraphs_field(el, service_name):
 
 def _convert_query_and_tags(el, service_name):
     """
-    Convert query and tags attribute in STE and SEMANTIC_IMAGE_MATCHER EVENTS from string to list for all types.
+    Convert query and tags attribute in STE, SEMANTIC_IMAGE_MATCHER and IMAGE_TAGGING EVENTS from string to list for all types.
 
     :param el: dictionary that represent the event.
     :param service_name: element service name (only STE is accepted).
@@ -144,6 +141,14 @@ def _convert_query_and_tags(el, service_name):
                 el["detail"]["evaluation"]["payload"]["query"] = []
             else:
                 el["detail"]["evaluation"]["payload"]["query"] = [query]
+        tags = el["detail"]["evaluation"]["payload"].get("image_tags", None)
+        if type(tags) is str:
+            if tags == "null":
+                # tags can be nullable
+                el["detail"]["evaluation"]["payload"]["image_tags"] = []
+            else:
+                el["detail"]["evaluation"]["payload"]["image_tags"] = [tags]
+    if service_name == "it":
         tags = el["detail"]["evaluation"]["payload"].get("image_tags", None)
         if type(tags) is str:
             if tags == "null":
@@ -210,6 +215,8 @@ def _get_service_name(el):
             service_name = el["detail"]["evaluation"]["prediction_id"].split("#")[-1]
         if service_name == "semanticImageMatcher":
             service_name = "sim"
+        if service_name == "imageTagging":
+            service_name = "it"
     return service_name
 
 
@@ -223,12 +230,7 @@ def split_files(file_content):
     :return events_arr: list of JSON events extracted from the file
     """
     predictions_arr = {"summarizer": [], "headline": [], "ste": []}
-    events_arr = {
-        "summarizer": [],
-        "headline": [],
-        "ste": [],
-        "sim": [],
-    }
+    events_arr = {"summarizer": [], "headline": [], "ste": [], "sim": [], "it": []}
     decoder = json.JSONDecoder()
     content_length = len(file_content)
     decode_index = 0
