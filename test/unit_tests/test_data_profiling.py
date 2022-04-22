@@ -89,7 +89,7 @@ class DataProfilingTestCase(unittest.TestCase):
                     "id": "9d38ef9e-9ac2-4960-a356-d47018bdf42d",
                     "shape_id": "3fb1d9a8-1535-4dfc-966c-67bda8a99bd1",
                     "prediction_id": None,
-                    "service": "ste",
+                    "service": "summarizer",
                     "timestamp": 1637181418425,
                     "reporter": "user",
                     "type": "PUBLISH",
@@ -104,7 +104,7 @@ class DataProfilingTestCase(unittest.TestCase):
         }
 
         schema = {}
-        with open(f"{VALIDATION_SCHEMA_DIR}/ste_event.json", "r") as jf:
+        with open(f"{VALIDATION_SCHEMA_DIR}/summarizer_event.json", "r") as jf:
             schema = json.loads(jf.read())
         flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)

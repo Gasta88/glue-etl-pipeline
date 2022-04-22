@@ -116,7 +116,7 @@
                                     "required": true
                                 },
                                 "paragraph": {
-                                    "type": "string",
+                                    "type": "integer",
                                     "required": true
                                 },
                                 "slide": {
@@ -189,7 +189,7 @@
                                     "required": true
                                 },
                                 "paragraph": {
-                                    "type": "string",
+                                    "type": "integer",
                                     "required": true
                                 },
                                 "slide": {
