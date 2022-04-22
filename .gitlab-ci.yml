@@ -99,11 +99,6 @@ python_unit_test:
     - poetry run coverage report -m --omit=test/unit_tests/check_terraform_plan.py
     - poetry run coverage-badge
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
-  after_script:
-    - cd deployments
-    - terraform init
-    - terraform workspace select default
-    - terraform workspace delete -force unit-test
 
 # run end-to-end tests
 e2e_test:
