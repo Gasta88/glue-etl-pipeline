@@ -166,7 +166,7 @@ def get_run_properties():
                         detail.evaluation.shape_id as shape_id,
                         detail.evaluation.type as event_type,
                         detail.evaluation.reporter as reporter,
-                        detail.evaluation.payload.text as payload_text,
+                        detail.evaluation.payload.text as payload_text, 
                         detail.evaluation.payload.query as payload_query,
                         detail.evaluation.payload.media_id as payload_media_id,
                         detail.evaluation.payload.media_type as payload_media_type,

@@ -43,165 +43,15 @@ def get_run_properties():
     return config
 
 
-def run_data_profiling(event, service_type):
+def run_data_profiling(event, validator_schema):
     """Perform data profiling with Cerberus package.
 
     :param event: nested dictionary representation of the dvault.
-    :service_type: label for either "event" or "prediction".
+    :param validator_schema: JSON schema to be use to validate dvault.
     :return bool: data profiling flag when is successful/unsuccessful.
     :return errors: dictionaries of exceptions encoutered in the profiling.
     """
-    schema = {}
-    if service_type == "event":
-        # when EVENT has a suitable prediction_id and might not have a service attribute.
-        subschema_A = {
-            "template_dvault_version": {
-                "type": "string",
-                "required": True,
-            },
-            "id": {"type": "string", "required": True},
-            "shape_id": {"type": "string", "required": True},
-            "prediction_id": {"type": "string", "required": True},
-            "service": {"type": "string", "allowed": {"summarizer", "headline", "ste"}},
-            "timestamp": {"type": "integer", "required": True},
-            "reporter": {
-                "type": "string",
-                "required": True,
-                "allowed": ["user", "builder", "aws_rekognition"],
-            },
-            "type": {
-                "type": "string",
-                "required": True,
-                "allowed": [
-                    "ADD_TAG",
-                    "SEARCH IMAGE",
-                    "PUBLISH",
-                    "DELETE",
-                    "DELETE SLIDE",
-                    "TAG_IMAGE",
-                ],
-            },
-        }
-        # when EVENT has a service attribute, but not not have a prediction_id.
-        subschema_B = {
-            "template_dvault_version": {
-                "type": "string",
-                "required": True,
-            },
-            "id": {"type": "string", "required": True},
-            "shape_id": {"type": "string", "required": True},
-            "prediction_id": {"type": "string", "nullable": True},
-            "service": {
-                "type": "string",
-                "required": True,
-                "allowed": {
-                    "summarizer",
-                    "headline",
-                    "ste",
-                    "semanticImageMatcher",
-                    "imageTagging",
-                },
-            },
-            "timestamp": {"type": "integer", "required": True},
-            "reporter": {
-                "type": "string",
-                "required": True,
-                "allowed": ["user", "builder", "aws_rekognition"],
-            },
-            "type": {
-                "type": "string",
-                "required": True,
-                "allowed": [
-                    "ADD_TAG",
-                    "SEARCH_IMAGE",
-                    "PUBLISH",
-                    "DELETE",
-                    "DELETE_SLIDE",
-                    "SELECT_IMAGE",
-                    "TAG_IMAGE",
-                ],
-            },
-        }
-        schema = {
-            "version": {"type": "string", "required": True},
-            "id": {"type": "string", "required": True},
-            "detail-type": {
-                "type": "string",
-                "required": True,
-                "allowed": ["DVaultEvaluationEvent"],
-            },
-            "source": {"type": "string", "required": True},
-            "account": {"type": "string", "required": True},
-            "time": {"type": "string", "required": True},
-            "region": {"type": "string", "required": True},
-            "detail": {
-                "type": "dict",
-                "required": True,
-                "schema": {
-                    "id": {"type": "string", "required": True},
-                    "type": {
-                        "type": "string",
-                        "required": True,
-                        "allowed": ["DVaultEvaluationEvent"],
-                    },
-                    "timestamp": {"type": "integer", "required": True},
-                    "partitionKey": {"type": "string", "required": True},
-                    "evaluation": {
-                        "type": "dict",
-                        "required": True,
-                        "anyof_schema": [subschema_A, subschema_B],
-                    },
-                },
-            },
-        }
-    else:
-        schema = {
-            "version": {"type": "string", "required": True},
-            "id": {"type": "string", "required": True},
-            "detail-type": {
-                "type": "string",
-                "required": True,
-                "allowed": ["DVaultPredictionEvent"],
-            },
-            "source": {"type": "string", "required": True},
-            "account": {"type": "string", "required": True},
-            "time": {"type": "string", "required": True},
-            "region": {"type": "string", "required": True},
-            "detail": {
-                "type": "dict",
-                "required": True,
-                "schema": {
-                    "id": {"type": "string", "required": True},
-                    "type": {
-                        "type": "string",
-                        "required": True,
-                        "allowed": ["DVaultPredictionEvent"],
-                    },
-                    "timestamp": {"type": "integer", "required": True},
-                    "partitionKey": {"type": "string", "required": True},
-                    "prediction": {
-                        "type": "dict",
-                        "required": True,
-                        "schema": {
-                            "template_dvault_version": {
-                                "type": "string",
-                                "required": True,
-                            },
-                            "id": {"type": "string", "required": True},
-                            "shape_id": {"type": "string", "required": True},
-                            "id": {"type": "string", "required": True},
-                            "service": {
-                                "type": "string",
-                                "required": True,
-                                "allowed": ["summarizer", "headline", "ste"],
-                            },
-                            "timestamp": {"type": "integer", "required": True},
-                        },
-                    },
-                },
-            },
-        }
-    v = Validator(schema, allow_unknown=True)
+    v = Validator(validator_schema, allow_unknown=True)
     flag = v.validate(event)
     if not flag:
         return (flag, v.errors)
@@ -288,6 +138,10 @@ def main():
     """
     run_props = get_run_properties()
     s3 = s3fs.S3FileSystem()
+    validator_schemas = [
+        f"s3://{f}"
+        for f in s3.glob(f's3://{run_props["LANDING_BUCKETNAME"]}/dependencies/*.json')
+    ]
     for obj_key in run_props["DVAULT_FILES"]:
         logger.info(f"Profiling file {obj_key}.")
         file_name = obj_key.split("/")[-1]
@@ -299,7 +153,23 @@ def main():
         for event in events_arr:
             try:
                 service_name, service_type = _get_service_name_and_type(event)
-                profile_flag, errors = run_data_profiling(event, service_type)
+                schema_files = [
+                    s
+                    for s in validator_schemas
+                    if f"{service_name}_{service_type}.json" in s
+                ]
+                if len(schema_files) > 0:
+                    logger.error(
+                        f"Multiple schema files found for {service_name}_{service_type}"
+                    )
+                    sys.exit(1)
+                else:
+                    validator_schema = json.loads(
+                        s3.cat_file(schema_files[0]).decode("utf-8")
+                    )
+                profile_flag, errors = run_data_profiling(
+                    event, service_type, service_name, validator_schema
+                )
                 if (service_name is None) or not (profile_flag):
                     dirty_dvaults.append(json.dumps(event))
                 else:

@@ -82,7 +82,7 @@ resource "aws_s3_bucket_object" "scripts-folder" {
 }
 
 resource "aws_s3_bucket_object" "dependencies-folder" {
-  for_each = fileset("../dependencies", "*.whl")
+  for_each = fileset("../dependencies", "*")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
   acl      = "private"
   key      = "dependencies/${each.value}"

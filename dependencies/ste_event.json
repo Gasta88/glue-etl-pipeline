@@ -1,0 +1,259 @@
+{
+    "version": {
+        "type": "string",
+        "required": true
+    },
+    "id": {
+        "type": "string",
+        "required": true
+    },
+    "detail-type": {
+        "type": "string",
+        "required": true,
+        "allowed": [
+            "DVaultEvaluationEvent"
+        ]
+    },
+    "source": {
+        "type": "string",
+        "required": true
+    },
+    "account": {
+        "type": "string",
+        "required": true
+    },
+    "time": {
+        "type": "string",
+        "required": true
+    },
+    "region": {
+        "type": "string",
+        "required": true
+    },
+    "detail": {
+        "type": "dict",
+        "required": true,
+        "schema": {
+            "id": {
+                "type": "string",
+                "required": true
+            },
+            "type": {
+                "type": "string",
+                "required": true,
+                "allowed": [
+                    "DVaultEvaluationEvent"
+                ]
+            },
+            "timestamp": {
+                "type": "integer",
+                "required": true
+            },
+            "partitionKey": {
+                "type": "string",
+                "required": true
+            },
+            "evaluation": {
+                "type": "dict",
+                "required": true,
+                "anyof_schema": [
+                    {
+                        "template_dvault_version": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "id": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "shape_id": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "prediction_id": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "service": {
+                            "type": "string",
+                            "allowed": [
+                                "ste"
+                            ]
+                        },
+                        "timestamp": {
+                            "type": "integer",
+                            "required": true
+                        },
+                        "reporter": {
+                            "type": "string",
+                            "required": true,
+                            "allowed": [
+                                "user",
+                                "builder"
+                            ]
+                        },
+                        "type": {
+                            "type": "string",
+                            "required": true,
+                            "allowed": [
+                                "ADD_TAG",
+                                "SEARCH IMAGE",
+                                "PUBLISH"
+                            ]
+                        },
+                        "payload": {
+                            "type": "dict",
+                            "required": true,
+                            "schema": {
+                                "text": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "media_id": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "media_type": {
+                                    "type": "string",
+                                    "required": true,
+                                    "allowed": [
+                                        "IMAGE",
+                                        "VIDEO"
+                                    ]
+                                },
+                                "medialib": {
+                                    "type": "string",
+                                    "required": true,
+                                    "allowed": [
+                                        "MYLIB",
+                                        "SHAPELIB"
+                                    ]
+                                },
+                                "slide": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "query": {
+                                    "type": "list",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "string"
+                                    }
+                                },
+                                "tags": {
+                                    "type": "list",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "string"
+                                    }
+                                },
+                                "caption": {
+                                    "type": "string",
+                                    "required": true
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "template_dvault_version": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "id": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "shape_id": {
+                            "type": "string",
+                            "required": true
+                        },
+                        "prediction_id": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "service": {
+                            "type": "string",
+                            "required": true,
+                            "allowed": [
+                                "ste"
+                            ]
+                        },
+                        "timestamp": {
+                            "type": "integer",
+                            "required": true
+                        },
+                        "reporter": {
+                            "type": "string",
+                            "required": true,
+                            "allowed": [
+                                "user",
+                                "builder"
+                            ]
+                        },
+                        "type": {
+                            "type": "string",
+                            "required": true,
+                            "allowed": [
+                                "ADD_TAG",
+                                "SEARCH_IMAGE",
+                                "PUBLISH"
+                            ]
+                        },
+                        "payload": {
+                            "type": "dict",
+                            "required": true,
+                            "schema": {
+                                "text": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "media_id": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "media_type": {
+                                    "type": "string",
+                                    "required": true,
+                                    "allowed": [
+                                        "IMAGE",
+                                        "VIDEO"
+                                    ]
+                                },
+                                "medialib": {
+                                    "type": "string",
+                                    "required": true,
+                                    "allowed": [
+                                        "MYLIB",
+                                        "SHAPELIB"
+                                    ]
+                                },
+                                "slide": {
+                                    "type": "string",
+                                    "required": true
+                                },
+                                "query": {
+                                    "type": "list",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "string"
+                                    }
+                                },
+                                "tags": {
+                                    "type": "list",
+                                    "required": true,
+                                    "schema": {
+                                        "type": "string"
+                                    }
+                                },
+                                "caption": {
+                                    "type": "string",
+                                    "required": true
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
