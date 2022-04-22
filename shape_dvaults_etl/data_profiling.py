@@ -167,9 +167,7 @@ def main():
                     validator_schema = json.loads(
                         s3.cat_file(schema_files[0]).decode("utf-8")
                     )
-                profile_flag, errors = run_data_profiling(
-                    event, service_type, service_name, validator_schema
-                )
+                profile_flag, errors = run_data_profiling(event, validator_schema)
                 if (service_name is None) or not (profile_flag):
                     dirty_dvaults.append(json.dumps(event))
                 else:

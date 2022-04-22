@@ -1,9 +1,11 @@
 import unittest
 import warnings
 from shape_dvaults_etl.data_profiling import run_data_profiling
+import json
 
 
 TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
+VALIDATION_SCHEMA_DIR = "dependencies"
 
 
 class DataProfilingTestCase(unittest.TestCase):
@@ -56,8 +58,10 @@ class DataProfilingTestCase(unittest.TestCase):
                 "tags": {"region": "eu-west-1"},
             },
         }
-
-        flag, errors = run_data_profiling(event, "event")
+        schema = {}
+        with open(f"{VALIDATION_SCHEMA_DIR}/summarizer_event.json", "r") as jf:
+            schema = json.loads(jf.read())
+        flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)
         self.assertDictEqual(errors, {})
 
@@ -99,7 +103,10 @@ class DataProfilingTestCase(unittest.TestCase):
             },
         }
 
-        flag, errors = run_data_profiling(event, "event")
+        schema = {}
+        with open(f"{VALIDATION_SCHEMA_DIR}/ste_event.json", "r") as jf:
+            schema = json.loads(jf.read())
+        flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)
         self.assertDictEqual(errors, {})
 
@@ -140,7 +147,10 @@ class DataProfilingTestCase(unittest.TestCase):
             },
         }
 
-        flag, errors = run_data_profiling(event, "event")
+        schema = {}
+        with open(f"{VALIDATION_SCHEMA_DIR}/summarizer_event.json", "r") as jf:
+            schema = json.loads(jf.read())
+        flag, errors = run_data_profiling(event, schema)
         self.assertFalse(flag)
         self.assertTrue(len(errors) > 0)
 
@@ -185,7 +195,10 @@ class DataProfilingTestCase(unittest.TestCase):
             },
         }
 
-        flag, errors = run_data_profiling(event, "prediction")
+        schema = {}
+        with open(f"{VALIDATION_SCHEMA_DIR}/headline_prediction.json", "r") as jf:
+            schema = json.loads(jf.read())
+        flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)
         self.assertDictEqual(errors, {})
 
@@ -230,7 +243,10 @@ class DataProfilingTestCase(unittest.TestCase):
             },
         }
 
-        flag, errors = run_data_profiling(event, "prediction")
+        schema = {}
+        with open(f"{VALIDATION_SCHEMA_DIR}/headline_prediction.json", "r") as jf:
+            schema = json.loads(jf.read())
+        flag, errors = run_data_profiling(event, schema)
         self.assertFalse(flag)
         self.assertTrue(len(errors) > 0)
 
