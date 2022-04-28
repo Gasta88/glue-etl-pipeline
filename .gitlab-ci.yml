@@ -44,7 +44,7 @@ black:
   before_script:
     - *poetry_template
   script:
-    - poetry run black --check --diff shape_dvaults_etl
+    - poetry run black --check --diff shape_dvault_ingestion_etl
 
 # check terraform file quality
 terraform:
