@@ -158,7 +158,7 @@ def main():
                     for s in validator_schemas
                     if f"{service_name}_{service_type}.json" in s
                 ]
-                if len(schema_files) > 0:
+                if len(schema_files) > 1:
                     logger.error(
                         f"Multiple schema files found for {service_name}_{service_type}"
                     )
