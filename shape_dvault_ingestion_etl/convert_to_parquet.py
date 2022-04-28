@@ -236,10 +236,18 @@ def get_refined_dataframe(spark, df, sql_dict, table_name):
     :param table_name: name of the table to refer.
     :return refined_df: cleaned dataframe to store on S3.
     """
+    import pyspark.sql.functions as F
+
     logger.info(f"Refining dataset {table_name}")
     df.createOrReplaceTempView(table_name.lower())
     try:
-        refined_df = spark.sql(sql_dict[table_name])
+        tmp_df = spark.sql(sql_dict[table_name])
+        refined_df = (
+            tmp_df.withColumn("year", F.year(tmp_df.date_time))
+            .withColumn("month", F.month(tmp_df.date_time))
+            .withColumn("day", F.dayofmonth(tmp_df.date_time))
+            .withColumn("hour", F.hour(tmp_df.date_time))
+        )
     except:
         logger.error(f"Refinement of dataset {table_name} failed.")
         sys.exit(1)
@@ -264,7 +272,9 @@ def main():
         refined_df = get_refined_dataframe(
             run_props["SPARK"], df, run_props["SQL_DICT"], table_name
         )
-        refined_df.write.format("parquet").mode("append").save(parquet_filename)
+        refined_df.write.format("parquet").partitionBy(
+            "year", "month", "day", "hour"
+        ).mode("append").save(parquet_filename)
     return
 
 

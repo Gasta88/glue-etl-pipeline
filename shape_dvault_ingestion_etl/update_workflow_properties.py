@@ -148,8 +148,8 @@ def main():
                 dvault_files.sort()
             else:
                 logger.info("Compare new against old set of dvault files.")
-                new_dvault_files.sort(reverse=True)
-                old_dvault_files.sort(reverse=True)
+                new_dvault_files.sort()
+                old_dvault_files.sort()
                 dvault_files = [
                     f for f in new_dvault_files if f not in old_dvault_files
                 ]

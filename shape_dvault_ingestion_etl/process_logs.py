@@ -74,7 +74,7 @@ def get_valid_workflow_run(workflow_name, workflow_run_id, env):
     :return workflow_details: details of valid Glue workflow.
     """
     glue = boto3.client("glue")
-    job_name = f"dvault-profile-job-{env}"
+    job_name = f"shape-dvault-ingestion-profile-job-{env}"
     try:
         workflow_run = glue.get_workflow_run(
             Name=workflow_name, RunId=workflow_run_id, IncludeGraph=True
@@ -191,7 +191,7 @@ def main():
         return
     workflow_name = run_props["workflow_name"]
     workflow_run_id = run_props["workflow_run_id"]
-    index_name = f'dvault_logs_{run_props["ENVIRONMENT"]}'
+    index_name = f'shape_dvault_ingestion_logs_{run_props["ENVIRONMENT"]}'
     logger.info(f"Get all info on workflow run {workflow_run_id}.")
     workflow_run = get_valid_workflow_run(
         workflow_name, workflow_run_id, run_props["ENVIRONMENT"]

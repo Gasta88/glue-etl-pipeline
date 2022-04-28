@@ -37,7 +37,6 @@ locals {
   environmentvars = contains(keys(local.env), terraform.workspace) ? terraform.workspace : "dev"
   workspace       = merge(local.env["dev"], local.env[local.environmentvars])
 }
-
 #--------------------------- S3 and S3 objects
 resource "aws_s3_bucket" "dvault-bucket" {
   bucket = "shape-dvault-ingestion-landing-${terraform.workspace}"
@@ -96,7 +95,7 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
 
 
 resource "aws_iam_role" "glue-role" {
-  name                = "shape-dvault-ingestion-glue-service-role-${terraform.workspace}"
+  name                = "shape-dvault-ingestion-glue-role-${terraform.workspace}"
   path                = "/"
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole", aws_iam_policy.s3-data-policy.arn]
   # Terraform's "jsonencode" function converts a
@@ -186,7 +185,7 @@ resource "aws_iam_policy" "s3-data-policy" {
 }
 
 resource "aws_glue_connection" "elasticsearch" {
-  name            = "shape-dvault-ingestion-glue-connect-to-es-${terraform.workspace}"
+  name            = "shape-dvault-ingestion-glue-to-es-${terraform.workspace}"
   connection_type = "NETWORK"
 
   physical_connection_requirements {
@@ -198,7 +197,7 @@ resource "aws_glue_connection" "elasticsearch" {
 }
 
 resource "aws_glue_workflow" "dvault-glue-workflow" {
-  name        = "shape-dvault-ingestion-batch-workflow-${terraform.workspace}"
+  name        = "shape-dvault-ingestion-batch-${terraform.workspace}"
   description = "Glue workflow triggered by schedule or on-demand"
   default_run_properties = {
     "source_bucketname" : "${local.workspace["source_bucket"]}"
@@ -208,10 +207,10 @@ resource "aws_glue_workflow" "dvault-glue-workflow" {
 }
 
 resource "aws_glue_trigger" "prejob-trigger" {
-  name          = "shape-dvault-ingestion-pre-job-trigger-${terraform.workspace}"
-  schedule      = "cron(0 * ? * MON-FRI *)"
-  type          = "SCHEDULED"
-  enabled       = false
+  name     = "shape-dvault-ingestion-pre-job-${terraform.workspace}"
+  schedule = "cron(0 * ? * MON-FRI *)"
+  type     = "SCHEDULED"
+  # enabled       = false
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
   actions {
     job_name = aws_glue_job.pre-job.name
@@ -242,7 +241,7 @@ resource "aws_glue_job" "pre-job" {
   timeout = 60
 }
 resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
-  name          = "shape-dvault-ingestion-profile-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-profile-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -259,7 +258,7 @@ resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
-  name          = "shape-dvault-ingestion-profile-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-profile-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -299,7 +298,7 @@ resource "aws_glue_job" "profile-dvault-job" {
 }
 
 resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
-  name          = "shape-dvault-ingestion-flat-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-flat-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -316,7 +315,7 @@ resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
-  name          = "shape-dvault-ingestion-flat-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-flat-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -378,7 +377,7 @@ resource "aws_glue_job" "clean-up-job" {
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
-  name          = "shape-dvault-ingestion-convert-to-parquet-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-convert-to-parquet-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -395,7 +394,7 @@ resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
-  name          = "shape-dvault-ingestion-convert-to-parquet-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-convert-to-parquet-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -438,7 +437,7 @@ resource "aws_glue_job" "convert-to-parquet-job" {
 
 
 resource "aws_glue_trigger" "postjob-pass-trigger" {
-  name          = "shape-dvault-ingestion-post-job-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-post-job-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -455,7 +454,7 @@ resource "aws_glue_trigger" "postjob-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "postjob-fail-trigger" {
-  name          = "shape-dvault-ingestion-post-job-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-post-job-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -496,7 +495,7 @@ resource "aws_glue_job" "post-job" {
 }
 
 resource "aws_glue_trigger" "cleanupjob-trigger" {
-  name          = "shape-dvault-ingestion-cleanup-job-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-cleanup-job-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -513,7 +512,7 @@ resource "aws_glue_trigger" "cleanupjob-trigger" {
 }
 
 resource "aws_glue_trigger" "eslogsjob-trigger" {
-  name          = "shape-dvault-ingestion-eslogs-job-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-eslogs-job-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
