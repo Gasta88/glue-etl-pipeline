@@ -97,7 +97,7 @@
                             "required": true,
                             "allowed": [
                                 "ADD_TAG",
-                                "SEARCH IMAGE",
+                                "SEARCH_IMAGE",
                                 "PUBLISH"
                             ]
                         },

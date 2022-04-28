@@ -196,7 +196,7 @@ def main():
                     f"DvaultFile:{file_name}|"
                     f"ServiceName:{None}|"
                     f"ServiceType:{None}|"
-                    f"Errors:Invalid dvault"
+                    f"Errors:{e}"
                 )
                 logger.info(info_msg)
         save_dvaults(
