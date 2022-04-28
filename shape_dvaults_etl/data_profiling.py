@@ -84,6 +84,10 @@ def _get_service_name_and_type(el):
                     -1
                 ]
         service_type = "event"
+        if service_name == "semanticImageMatcher":
+            service_name = "sim"
+        if service_name == "imageTagging":
+            service_name = "it"
     return (service_name, service_type)
 
 
