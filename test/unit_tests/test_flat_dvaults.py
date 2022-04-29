@@ -2,7 +2,7 @@ import boto3
 import os
 import unittest
 import warnings
-from shape_dvaults_etl.flat_dvaults import (
+from shape_dvault_ingestion_etl.flat_dvaults import (
     split_files,
     _recast_score_to_float,
     _recast_paragraph_to_str,

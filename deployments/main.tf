@@ -13,7 +13,7 @@ terraform {
   }
   backend "s3" {
     bucket = "terraform-ai-dev-states"
-    key    = "ai-terraform-state-files/dvault-shape-staging.tfstate"
+    key    = "ai-terraform-state-files/dvault-shape-ingestion-staging.tfstate"
     region = "us-east-1"
   }
 }
@@ -37,10 +37,9 @@ locals {
   environmentvars = contains(keys(local.env), terraform.workspace) ? terraform.workspace : "dev"
   workspace       = merge(local.env["dev"], local.env[local.environmentvars])
 }
-
 #--------------------------- S3 and S3 objects
 resource "aws_s3_bucket" "dvault-bucket" {
-  bucket = "dvault-landing-${terraform.workspace}"
+  bucket = "shape-dvault-ingestion-landing-${terraform.workspace}"
   acl    = "private"
   server_side_encryption_configuration {
     rule {
@@ -73,16 +72,16 @@ resource "aws_s3_bucket" "dvault-bucket" {
 }
 
 resource "aws_s3_bucket_object" "scripts-folder" {
-  for_each = fileset("../shape_dvaults_etl", "*.py")
+  for_each = fileset("../shape_dvault_ingestion_etl", "*.py")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
   acl      = "private"
   key      = "scripts/${each.value}"
-  source   = "../shape_dvaults_etl/${each.value}"
-  etag     = filemd5("../shape_dvaults_etl/${each.value}")
+  source   = "../shape_dvault_ingestion_etl/${each.value}"
+  etag     = filemd5("../shape_dvault_ingestion_etl/${each.value}")
 }
 
 resource "aws_s3_bucket_object" "dependencies-folder" {
-  for_each = fileset("../dependencies", "*.whl")
+  for_each = fileset("../dependencies", "*")
   bucket   = aws_s3_bucket.dvault-bucket.bucket
   acl      = "private"
   key      = "dependencies/${each.value}"
@@ -96,7 +95,7 @@ resource "aws_s3_bucket_object" "dependencies-folder" {
 
 
 resource "aws_iam_role" "glue-role" {
-  name                = "dvault-glue-service-role-${terraform.workspace}"
+  name                = "shape-dvault-ingestion-glue-role-${terraform.workspace}"
   path                = "/"
   managed_policy_arns = ["arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole", aws_iam_policy.s3-data-policy.arn]
   # Terraform's "jsonencode" function converts a
@@ -117,7 +116,7 @@ resource "aws_iam_role" "glue-role" {
 }
 
 resource "aws_iam_policy" "s3-data-policy" {
-  name = "data-policy-dvault-${terraform.workspace}"
+  name = "data-policy-shape-dvault-ingestion-${terraform.workspace}"
   path = "/"
 
   # Terraform's "jsonencode" function converts a
@@ -186,7 +185,7 @@ resource "aws_iam_policy" "s3-data-policy" {
 }
 
 resource "aws_glue_connection" "elasticsearch" {
-  name            = "dvault-glue-connection-to-elasticsearch-${terraform.workspace}"
+  name            = "shape-dvault-ingestion-glue-to-es-${terraform.workspace}"
   connection_type = "NETWORK"
 
   physical_connection_requirements {
@@ -198,7 +197,7 @@ resource "aws_glue_connection" "elasticsearch" {
 }
 
 resource "aws_glue_workflow" "dvault-glue-workflow" {
-  name        = "s3-batch-glue-dvault-workflow-${terraform.workspace}"
+  name        = "shape-dvault-ingestion-batch-${terraform.workspace}"
   description = "Glue workflow triggered by schedule or on-demand"
   default_run_properties = {
     "source_bucketname" : "${local.workspace["source_bucket"]}"
@@ -208,9 +207,10 @@ resource "aws_glue_workflow" "dvault-glue-workflow" {
 }
 
 resource "aws_glue_trigger" "prejob-trigger" {
-  name          = "dvault-pre-job-trigger-${terraform.workspace}"
-  schedule      = "cron(0 * ? * MON-FRI *)"
-  type          = "SCHEDULED"
+  name     = "shape-dvault-ingestion-pre-job-${terraform.workspace}"
+  schedule = "cron(0 * ? * MON-FRI *)"
+  type     = "SCHEDULED"
+  # enabled       = false
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
   actions {
     job_name = aws_glue_job.pre-job.name
@@ -219,7 +219,7 @@ resource "aws_glue_trigger" "prejob-trigger" {
 }
 
 resource "aws_glue_job" "pre-job" {
-  name         = "dvault-pre-job-${terraform.workspace}"
+  name         = "shape-dvault-ingestion-pre-job-${terraform.workspace}"
   description  = "Glue job that updates state to STARTED in workflow run properties and set workflow global properties."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -238,10 +238,10 @@ resource "aws_glue_job" "pre-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  timeout = 15
+  timeout = 60
 }
 resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
-  name          = "dvault-profile-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-profile-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -258,7 +258,7 @@ resource "aws_glue_trigger" "profile-dvault-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
-  name          = "dvault-profile-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-profile-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -275,7 +275,7 @@ resource "aws_glue_trigger" "profile-dvault-fail-trigger" {
 }
 
 resource "aws_glue_job" "profile-dvault-job" {
-  name         = "dvault-profile-job-${terraform.workspace}"
+  name         = "shape-dvault-ingestion-profile-job-${terraform.workspace}"
   description  = "Glue job that profiles dvault files and split them in CLEAN and DIRTY."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -294,11 +294,11 @@ resource "aws_glue_job" "profile-dvault-job" {
     "--enable-metrics"                   = "",
     "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/Cerberus-1.3.3-py3-none-any.whl,s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
   }
-  timeout = 15
+  timeout = 60
 }
 
 resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
-  name          = "dvault-flat-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-flat-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -315,7 +315,7 @@ resource "aws_glue_trigger" "flat-dvault-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
-  name          = "dvault-flat-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-flat-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -332,7 +332,7 @@ resource "aws_glue_trigger" "flat-dvault-fail-trigger" {
 }
 
 resource "aws_glue_job" "flat-dvault-job" {
-  name         = "dvault-flat-job-${terraform.workspace}"
+  name         = "shape-dvault-ingestion-flat-job-${terraform.workspace}"
   description  = "Glue job that explodes dvault files and split them in PREDICTIONS and EVENTS."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -351,11 +351,11 @@ resource "aws_glue_job" "flat-dvault-job" {
     "--enable-metrics"                   = "",
     "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/s3fs-0.4.0-py3-none-any.whl"
   }
-  timeout = 15
+  timeout = 60
 }
 
 resource "aws_glue_job" "clean-up-job" {
-  name         = "dvault-clean-up-job-${terraform.workspace}"
+  name         = "shape-dvault-ingestion-clean-up-job-${terraform.workspace}"
   description  = "Glue job that clean up prefixes like data/flat_dvaults/events and data/flat_dvaults/predictions."
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -373,11 +373,11 @@ resource "aws_glue_job" "clean-up-job" {
     "--enable-metrics"                   = ""
 
   }
-  timeout = 15
+  timeout = 60
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
-  name          = "dvault-convert-to-parquet-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-convert-to-parquet-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -394,7 +394,7 @@ resource "aws_glue_trigger" "convert-to-parquet-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
-  name          = "dvault-convert-to-parquet-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-convert-to-parquet-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -411,7 +411,7 @@ resource "aws_glue_trigger" "convert-to-parquet-fail-trigger" {
 }
 
 resource "aws_glue_job" "convert-to-parquet-job" {
-  name              = "dvault-convert-to-parquet-job-${terraform.workspace}"
+  name              = "shape-dvault-ingestion-convert-to-parquet-job-${terraform.workspace}"
   description       = "Glue job that converts JSON to Parquet"
   glue_version      = "3.0"
   role_arn          = aws_iam_role.glue-role.arn
@@ -432,12 +432,12 @@ resource "aws_glue_job" "convert-to-parquet-job" {
     "--spark-event-logs-path"            = "s3://spark-history-server-logs-fghjrt/",
     "--enable-auto-scaling" : "true"
   }
-  timeout = 15
+  timeout = 60
 }
 
 
 resource "aws_glue_trigger" "postjob-pass-trigger" {
-  name          = "dvault-post-job-pass-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-post-job-pass-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -454,7 +454,7 @@ resource "aws_glue_trigger" "postjob-pass-trigger" {
 }
 
 resource "aws_glue_trigger" "postjob-fail-trigger" {
-  name          = "dvault-post-job-fail-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-post-job-fail-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -472,7 +472,7 @@ resource "aws_glue_trigger" "postjob-fail-trigger" {
 
 
 resource "aws_glue_job" "post-job" {
-  name         = "dvault-post-job-${terraform.workspace}"
+  name         = "shape-dvault-ingestion-post-job-${terraform.workspace}"
   description  = "Glue job that updates workflow run property"
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -491,11 +491,11 @@ resource "aws_glue_job" "post-job" {
     "--enable-continuous-log-filter"     = "true",
     "--enable-metrics"                   = ""
   }
-  timeout = 15
+  timeout = 60
 }
 
 resource "aws_glue_trigger" "cleanupjob-trigger" {
-  name          = "dvault-cleanup-job-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-cleanup-job-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -512,7 +512,7 @@ resource "aws_glue_trigger" "cleanupjob-trigger" {
 }
 
 resource "aws_glue_trigger" "eslogsjob-trigger" {
-  name          = "dvault-eslogs-job-trigger-${terraform.workspace}"
+  name          = "shape-dvault-ingestion-eslogs-job-${terraform.workspace}"
   type          = "CONDITIONAL"
   workflow_name = aws_glue_workflow.dvault-glue-workflow.name
 
@@ -529,7 +529,7 @@ resource "aws_glue_trigger" "eslogsjob-trigger" {
 }
 
 resource "aws_glue_job" "eslogs-job" {
-  name         = "dvault-eslogs-job-${terraform.workspace}"
+  name         = "shape-dvault-ingestion-eslogs-job-${terraform.workspace}"
   description  = "Glue job that send logs to ElasticSearch"
   glue_version = "1.0"
   role_arn     = aws_iam_role.glue-role.arn
@@ -549,7 +549,7 @@ resource "aws_glue_job" "eslogs-job" {
     "--enable-metrics"                   = "",
     "--extra-py-files"                   = "s3://${aws_s3_bucket.dvault-bucket.bucket}/dependencies/elasticsearch-7.13.0-py2.py3-none-any.whl"
   }
-  timeout = 15
+  timeout = 60
 }
 
 
