@@ -44,7 +44,7 @@ black:
   before_script:
     - *poetry_template
   script:
-    - poetry run black --check --diff shape_dvaults_etl
+    - poetry run black --check --diff shape_dvault_ingestion_etl
 
 # check terraform file quality
 terraform:
@@ -78,7 +78,8 @@ terraform_unit_test:
     - cd ../test/unit_tests
     - python -m unittest check_terraform_plan.py
   after_script:
-    - cd deployment
+    - cd deployments
+    - terraform init
     - terraform workspace select default
     - terraform workspace delete -force unit-test
 
@@ -98,10 +99,6 @@ python_unit_test:
     - poetry run coverage report -m --omit=test/unit_tests/check_terraform_plan.py
     - poetry run coverage-badge
   coverage: "/TOTAL.+ ([0-9]{1,3}%)/"
-  after_script:
-    - cd deployments
-    - terraform workspace select default
-    - terraform workspace delete -force unit-test
 
 # run end-to-end tests
 e2e_test:
@@ -122,6 +119,7 @@ e2e_test:
     - python run_e2e_test.py
   after_script:
     - cd deployments
+    - terraform init
     - terraform destroy --auto-approve
     - terraform workspace select default
     - terraform workspace delete -force e2e-test

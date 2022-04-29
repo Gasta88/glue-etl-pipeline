@@ -1,0 +1,183 @@
+{
+    "version": {
+        "type": "string",
+        "required": true
+    },
+    "id": {
+        "type": "string",
+        "required": true
+    },
+    "detail-type": {
+        "type": "string",
+        "required": true,
+        "allowed": [
+            "DVaultPredictionEvent"
+        ]
+    },
+    "source": {
+        "type": "string",
+        "required": true
+    },
+    "account": {
+        "type": "string",
+        "required": true
+    },
+    "time": {
+        "type": "string",
+        "required": true
+    },
+    "region": {
+        "type": "string",
+        "required": true
+    },
+    "detail": {
+        "type": "dict",
+        "required": true,
+        "schema": {
+            "id": {
+                "type": "string",
+                "required": true
+            },
+            "type": {
+                "type": "string",
+                "required": true,
+                "allowed": [
+                    "DVaultPredictionEvent"
+                ]
+            },
+            "timestamp": {
+                "type": "integer",
+                "required": true
+            },
+            "partitionKey": {
+                "type": "string",
+                "required": true
+            },
+            "prediction": {
+                "type": "dict",
+                "required": true,
+                "schema": {
+                    "service_version": {
+                        "type": "dict",
+                        "required": true,
+                        "schema": {
+                            "software": {
+                                "type": "string"
+                            },
+                            "model": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "id": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "shape_id": {
+                        "type": "string",
+                        "required": true
+                    },
+                    "service": {
+                        "type": "string",
+                        "required": true,
+                        "allowed": [
+                            "summarizer"
+                        ]
+                    },
+                    "timestamp": {
+                        "type": "integer",
+                        "required": true
+                    },
+                    "input": {
+                        "type": "dict",
+                        "required": true,
+                        "schema": {
+                            "paragraphs": {
+                                "type": "list",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "sentence_scores": {
+                                "type": "list",
+                                "schema": {
+                                    "type": "dict",
+                                    "schema": {
+                                        "sentence": {
+                                            "type": "string"
+                                        },
+                                        "score": {
+                                            "type": "float"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "output": {
+                        "type": "dict",
+                        "required": true,
+                        "schema": {
+                            "summary": {
+                                "type": "list",
+                                "required": true,
+                                "schema": {
+                                    "type": "string"
+                                }
+                            },
+                            "metadata": {
+                                "type": "list",
+                                "required": true,
+                                "schema": {
+                                    "type": "dict",
+                                    "schema": {
+                                        "filtered_sentences": {
+                                            "type": "list",
+                                            "schema": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "scores": {
+                                            "type": "list",
+                                            "schema": {
+                                                "type": "float"
+                                            }
+                                        },
+                                        "idx": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            },
+                            "skipped_paragraphs": {
+                                "type": "list",
+                                "required": true,
+                                "schema": {
+                                    "type": "dict",
+                                    "schema": {
+                                        "text": {
+                                            "type": "string"
+                                        },
+                                        "index": {
+                                            "type": "integer"
+                                        },
+                                        "language": {
+                                            "type": "string"
+                                        },
+                                        "text_language": {
+                                            "type": "string"
+                                        },
+                                        "original_paragraph": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
