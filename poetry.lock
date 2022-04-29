@@ -1,14 +1,14 @@
 [[package]]
 name = "awscli"
-version = "1.23.3"
+version = "1.22.54"
 description = "Universal Command Line Environment for AWS."
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = "1.25.3"
-colorama = ">=0.2.5,<0.4.5"
+botocore = "1.23.54"
+colorama = ">=0.2.5,<0.4.4"
 docutils = ">=0.10,<0.16"
 PyYAML = ">=3.10,<5.5"
 rsa = ">=3.1.2,<4.8"
@@ -44,15 +44,15 @@ uvloop = ["uvloop (>=0.15.2)"]
 
 [[package]]
 name = "boto3"
-version = "1.22.3"
+version = "1.20.37"
 description = "The AWS SDK for Python"
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-botocore = ">=1.25.3,<1.26.0"
-jmespath = ">=0.7.1,<2.0.0"
+botocore = ">=1.23.37,<1.24.0"
+jmespath = ">=0.7.1,<1.0.0"
 s3transfer = ">=0.5.0,<0.6.0"
 
 [package.extras]
@@ -60,19 +60,19 @@ crt = ["botocore[crt] (>=1.21.0,<2.0a0)"]
 
 [[package]]
 name = "botocore"
-version = "1.25.3"
+version = "1.23.54"
 description = "Low-level, data-driven core of boto 3."
 category = "main"
 optional = false
 python-versions = ">= 3.6"
 
 [package.dependencies]
-jmespath = ">=0.7.1,<2.0.0"
+jmespath = ">=0.7.1,<1.0.0"
 python-dateutil = ">=2.1,<3.0.0"
 urllib3 = ">=1.25.4,<1.27"
 
 [package.extras]
-crt = ["awscrt (==0.13.8)"]
+crt = ["awscrt (==0.12.5)"]
 
 [[package]]
 name = "cerberus"
@@ -104,7 +104,7 @@ importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
 
 [[package]]
 name = "colorama"
-version = "0.4.4"
+version = "0.4.3"
 description = "Cross-platform colored terminal text."
 category = "main"
 optional = false
@@ -434,24 +434,24 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytes
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.6.2"
-content-hash = "905e113f106304ca286507981584680e6b1dcc73021ca3abbc1703170407fca4"
+content-hash = "3068d836ad7681745e6fb855777edf1c502b7f99a4e60dd51aaa675c1c4fed1d"
 
 [metadata.files]
 awscli = [
-    {file = "awscli-1.23.3-py3-none-any.whl", hash = "sha256:9f9af886da3beb572fff8024d63e22d7087c81be805bec54b0c2e098d685447f"},
-    {file = "awscli-1.23.3.tar.gz", hash = "sha256:bf78082bbfc02a18d2c8bc502d2fd4c28550325319b8675da39883c6a3d0c04d"},
+    {file = "awscli-1.22.54-py3-none-any.whl", hash = "sha256:634989d74cd205d8a5b511950b803cda939919a7bc30b58d94be1fbe8ee97ba6"},
+    {file = "awscli-1.22.54.tar.gz", hash = "sha256:3f6413e168fca67859222af8ed0760a3be1493c332a642c0b53088804269074b"},
 ]
 black = [
     {file = "black-21.12b0-py3-none-any.whl", hash = "sha256:a615e69ae185e08fdd73e4715e260e2479c861b5740057fde6e8b4e3b7dd589f"},
     {file = "black-21.12b0.tar.gz", hash = "sha256:77b80f693a569e2e527958459634f18df9b0ba2625ba4e0c2d5da5be42e6f2b3"},
 ]
 boto3 = [
-    {file = "boto3-1.22.3-py3-none-any.whl", hash = "sha256:b291e9b8057158c4ee75a7df8ab22079b4ab915f032af59bcae22677f2a6ceda"},
-    {file = "boto3-1.22.3.tar.gz", hash = "sha256:ef66e2e4f05f0d20aab20b1b655dc670db5c9324d33db6754b576c6867c2ffe9"},
+    {file = "boto3-1.20.37-py3-none-any.whl", hash = "sha256:55c7004af4296648ee497417dfc454d9c39770c265f67e28e1c5f10e11f3b644"},
+    {file = "boto3-1.20.37.tar.gz", hash = "sha256:0e2f8aa8ee71f144d8afbe9ff7d0bb40525b94535e0695bdb200687970c9f452"},
 ]
 botocore = [
-    {file = "botocore-1.25.3-py3-none-any.whl", hash = "sha256:b63343736f1e778f9a658736afd9773ea38b3605d96556fb5585fc0c04a0d1e1"},
-    {file = "botocore-1.25.3.tar.gz", hash = "sha256:c807e14b956b4b11d6872e84d1d947d1da5ffeedf8aac569a6401063e1752abd"},
+    {file = "botocore-1.23.54-py3-none-any.whl", hash = "sha256:06ae8076c4dcf3d72bec4d37e5f2dce4a92a18a8cdaa3bfaa6e3b7b5e30a8d7e"},
+    {file = "botocore-1.23.54.tar.gz", hash = "sha256:4bb9ba16cccee5f5a2602049bc3e2db6865346b2550667f3013bdf33b0a01ceb"},
 ]
 cerberus = [
     {file = "Cerberus-1.3.3-py3-none-any.whl", hash = "sha256:7aff49bc793e58a88ac14bffc3eca0f67e077881d3c62c621679a621294dd174"},
@@ -466,8 +466,8 @@ click = [
     {file = "click-8.0.4.tar.gz", hash = "sha256:8458d7b1287c5fb128c90e23381cf99dcde74beaf6c7ff6384ce84d6fe090adb"},
 ]
 colorama = [
-    {file = "colorama-0.4.4-py2.py3-none-any.whl", hash = "sha256:9f47eda37229f68eee03b24b9748937c7dc3868f906e8ba69fbcbdd3bc5dc3e2"},
-    {file = "colorama-0.4.4.tar.gz", hash = "sha256:5941b2b48a20143d2267e95b1c2a7603ce057ee39fd88e7329b0c292aa16869b"},
+    {file = "colorama-0.4.3-py2.py3-none-any.whl", hash = "sha256:7d73d2a99753107a36ac6b455ee49046802e59d9d076ef8e47b61499fa29afff"},
+    {file = "colorama-0.4.3.tar.gz", hash = "sha256:e96da0d330793e2cb9485e9ddfd918d456036c7149416295932478192f4436a1"},
 ]
 coverage = [
     {file = "coverage-6.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:6dbc1536e105adda7a6312c778f15aaabe583b0e9a0b0a324990334fd458c94b"},
