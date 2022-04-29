@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "shape-dvault"
+name = "shape-dvault-ingestion"
 version = "0.1.0"
 description = "Shape dvault ETL pipeline"
 authors = ["Francesco Gastaldello <francesco.gastaldello@docebo.com>"]
