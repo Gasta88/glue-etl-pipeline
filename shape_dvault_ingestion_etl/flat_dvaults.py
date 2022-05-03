@@ -195,6 +195,8 @@ def _replace_image_uri(el, service_name, media_bucketname, all_medias):
                         f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
                     )
                 el["detail"]["evaluation"]["payload"]["media_id"] = media_uri_value[0]
+                # SEARCH_IMAGE and PUBLISH do not have this field,but is necessary in the parquet
+                el["detail"]["evaluation"]["payload"]["search_match"] = None
         else:
             # ADD_TAG events don't have these mandatory fields that will be used to generate the parquet files.
             el["detail"]["evaluation"]["payload"]["media_id"] = None
