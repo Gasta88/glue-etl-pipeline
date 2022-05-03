@@ -110,12 +110,10 @@
                                     "required": true
                                 },
                                 "media_id": {
-                                    "type": "string",
-                                    "required": true
+                                    "type": "string"
                                 },
                                 "media_type": {
                                     "type": "string",
-                                    "required": true,
                                     "allowed": [
                                         "IMAGE",
                                         "VIDEO"
@@ -129,10 +127,6 @@
                                         "SHAPELIB"
                                     ]
                                 },
-                                "slide": {
-                                    "type": "string",
-                                    "required": true
-                                },
                                 "query": {
                                     "type": "list",
                                     "required": true,
@@ -142,14 +136,12 @@
                                 },
                                 "tags": {
                                     "type": "list",
-                                    "required": true,
                                     "schema": {
                                         "type": "string"
                                     }
                                 },
                                 "caption": {
-                                    "type": "string",
-                                    "required": true
+                                    "type": "string"
                                 }
                             }
                         }
@@ -208,12 +200,10 @@
                                     "required": true
                                 },
                                 "media_id": {
-                                    "type": "string",
-                                    "required": true
+                                    "type": "string"
                                 },
                                 "media_type": {
                                     "type": "string",
-                                    "required": true,
                                     "allowed": [
                                         "IMAGE",
                                         "VIDEO"
@@ -227,10 +217,6 @@
                                         "SHAPELIB"
                                     ]
                                 },
-                                "slide": {
-                                    "type": "string",
-                                    "required": true
-                                },
                                 "query": {
                                     "type": "list",
                                     "required": true,
@@ -240,14 +226,12 @@
                                 },
                                 "tags": {
                                     "type": "list",
-                                    "required": true,
                                     "schema": {
                                         "type": "string"
                                     }
                                 },
                                 "caption": {
-                                    "type": "string",
-                                    "required": true
+                                    "type": "string"
                                 }
                             }
                         }

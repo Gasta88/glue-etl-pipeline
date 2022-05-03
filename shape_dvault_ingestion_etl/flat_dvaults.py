@@ -115,7 +115,7 @@ def _convert_query_and_tags(el, service_name):
     Convert query and tags attribute in STE, SEMANTIC_IMAGE_MATCHER and IMAGE_TAGGING EVENTS from string to list for all types.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only STE is accepted).
+    :param service_name: element service name (only STE and SIM are accepted).
     :return el: corrected element, if criterias are satisfied.
     """
     if service_name == "ste":
@@ -164,13 +164,13 @@ def _replace_image_uri(el, service_name, media_bucketname, all_medias):
     Replace media_id attribute for STE and SEMANTIC_IMAGE_MATCHER EVENTS only to the S3 URI.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only STE is accepted).
+    :param service_name: element service name (only STE and SIM are accepted).
     :param media_bucketname: string that define the S3 bucket with Shape media.
     :param al_medias: list of keys inside the S3 Shape media bucket.
     :return el: corrected element, if criterias are satisfied.
     """
     if service_name in ["ste", "sim"]:
-        # Skip over ADD_TAG type events since they do not have a media_id attribute for STE
+        # ADD_TAG type events do not have a media_id and media_type attributes for STE
         if el["detail"]["evaluation"]["type"] != "ADD_TAG":
             # If attributes are missing (for some undocumented reasons), do not alter dvault event
             if (
@@ -195,6 +195,12 @@ def _replace_image_uri(el, service_name, media_bucketname, all_medias):
                         f"Multiple media with id {media_id_value} found: {len(media_uri_value)}"
                     )
                 el["detail"]["evaluation"]["payload"]["media_id"] = media_uri_value[0]
+        else:
+            # ADD_TAG events don't have these mandatory fields that will be used to generate the parquet files.
+            el["detail"]["evaluation"]["payload"]["media_id"] = None
+            el["detail"]["evaluation"]["payload"]["media_type"] = None
+            el["detail"]["evaluation"]["payload"]["caption"] = None
+
     return el
 
 
