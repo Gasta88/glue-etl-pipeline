@@ -118,6 +118,7 @@ def get_run_properties():
                             detail.evaluation.payload.media_id as payload_media_id,
                             detail.evaluation.payload.media_type as payload_media_type,
                             detail.evaluation.payload.medialib as payload_medialib,
+                            detail.evaluation.payload.search_match as payload_search_match,
                             detail.evaluation.payload.tags as payload_tags,
                             detail.evaluation.payload.caption as payload_caption,
                             time as date_time
