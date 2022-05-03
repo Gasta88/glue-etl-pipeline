@@ -254,6 +254,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                             "payload": {
                                 "media_id": "s3://shape-media-library-staging/77e34376-ddc0-4710-8088-c426fb669951/MYLIB/67e319a0-33b0-478a-b0fa-35a337ae5fc1",
                                 "medialib": "MYLIB",
+                                "search_match": None,
                             },
                         },
                     }
@@ -265,6 +266,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                             "payload": {
                                 "media_id": "s3://shape-media-library-staging/77e34376-ddc0-4710-8088-c426fb669951/SHAPELIB/1546195",
                                 "medialib": "SHAPELIB",
+                                "search_match": None,
                             },
                         },
                     }
