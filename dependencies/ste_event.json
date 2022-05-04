@@ -110,10 +110,12 @@
                                     "required": true
                                 },
                                 "media_id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "nullable": true
                                 },
                                 "media_type": {
                                     "type": "string",
+                                    "nullable": true,
                                     "allowed": [
                                         "IMAGE",
                                         "VIDEO"
@@ -122,26 +124,40 @@
                                 "medialib": {
                                     "type": "string",
                                     "required": true,
+                                    "nullable": true,
                                     "allowed": [
                                         "MYLIB",
                                         "SHAPELIB"
                                     ]
                                 },
                                 "query": {
-                                    "type": "list",
                                     "required": true,
-                                    "schema": {
-                                        "type": "string"
-                                    }
+                                    "nullable": true,
+                                    "anyof": [
+                                        {
+                                            "type": "list",
+                                            "schema": {
+                                                "type": "string",
+                                                "nullable": true
+                                            }
+                                        },
+                                        {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    ]
                                 },
                                 "tags": {
                                     "type": "list",
+                                    "nullable": true,
                                     "schema": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "caption": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "nullable": true
                                 }
                             }
                         }
@@ -200,10 +216,12 @@
                                     "required": true
                                 },
                                 "media_id": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "nullable": true
                                 },
                                 "media_type": {
                                     "type": "string",
+                                    "nullable": true,
                                     "allowed": [
                                         "IMAGE",
                                         "VIDEO"
@@ -212,26 +230,40 @@
                                 "medialib": {
                                     "type": "string",
                                     "required": true,
+                                    "nullable": true,
                                     "allowed": [
                                         "MYLIB",
                                         "SHAPELIB"
                                     ]
                                 },
                                 "query": {
-                                    "type": "list",
                                     "required": true,
-                                    "schema": {
-                                        "type": "string"
-                                    }
+                                    "nullable": true,
+                                    "anyof": [
+                                        {
+                                            "type": "list",
+                                            "schema": {
+                                                "type": "string",
+                                                "nullable": true
+                                            }
+                                        },
+                                        {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    ]
                                 },
                                 "tags": {
                                     "type": "list",
+                                    "nullable": true,
                                     "schema": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "nullable": true
                                     }
                                 },
                                 "caption": {
-                                    "type": "string"
+                                    "type": "string",
+                                    "nullable": true
                                 }
                             }
                         }
