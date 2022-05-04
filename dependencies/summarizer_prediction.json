@@ -101,14 +101,18 @@
                             },
                             "sentence_scores": {
                                 "type": "list",
+                                "nullable": true,
                                 "schema": {
                                     "type": "dict",
+                                    "nullable": true,
                                     "schema": {
                                         "sentence": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "nullable": true
                                         },
                                         "score": {
-                                            "type": "float"
+                                            "type": "float",
+                                            "nullable": true
                                         }
                                     }
                                 }
@@ -128,48 +132,60 @@
                             },
                             "metadata": {
                                 "type": "list",
-                                "required": true,
+                                "nullable": true,
                                 "schema": {
                                     "type": "dict",
+                                    "nullable": true,
                                     "schema": {
                                         "filtered_sentences": {
                                             "type": "list",
+                                            "nullable": true,
                                             "schema": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "nullable": true
                                             }
                                         },
                                         "scores": {
                                             "type": "list",
+                                            "nullable": true,
                                             "schema": {
-                                                "type": "float"
+                                                "type": "float",
+                                                "nullable": true
                                             }
                                         },
                                         "idx": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "nullable": true
                                         }
                                     }
                                 }
                             },
                             "skipped_paragraphs": {
                                 "type": "list",
-                                "required": true,
+                                "nullable": true,
                                 "schema": {
                                     "type": "dict",
+                                    "nullable": true,
                                     "schema": {
                                         "text": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "nullable": true
                                         },
                                         "index": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "nullable": true
                                         },
                                         "language": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "nullable": true
                                         },
                                         "text_language": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "nullable": true
                                         },
                                         "original_paragraph": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "nullable": true
                                         }
                                     }
                                 }
