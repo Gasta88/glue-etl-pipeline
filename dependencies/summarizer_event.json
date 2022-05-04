@@ -77,9 +77,7 @@
                         "service": {
                             "type": "string",
                             "allowed": [
-                                "summarizer",
-                                "headline",
-                                "ste"
+                                "summarizer"
                             ]
                         },
                         "timestamp": {
@@ -90,20 +88,16 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "user",
-                                "builder"
+                                "user"
                             ]
                         },
                         "type": {
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "ADD_TAG",
-                                "SEARCH_IMAGE",
                                 "PUBLISH",
                                 "DELETE",
-                                "DELETE SLIDE",
-                                "TAG_IMAGE"
+                                "DELETE SLIDE"
                             ]
                         },
                         "payload": {
@@ -116,7 +110,8 @@
                                 },
                                 "paragraph": {
                                     "type": "integer",
-                                    "required": true
+                                    "required": true,
+                                    "nullable": true
                                 },
                                 "slide": {
                                     "type": "string",
@@ -146,11 +141,7 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "summarizer",
-                                "headline",
-                                "ste",
-                                "semanticImageMatcher",
-                                "imageTagging"
+                                "summarizer"
                             ]
                         },
                         "timestamp": {
@@ -161,21 +152,16 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "user",
-                                "builder"
+                                "user"
                             ]
                         },
                         "type": {
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "ADD_TAG",
-                                "SEARCH_IMAGE",
                                 "PUBLISH",
                                 "DELETE",
-                                "DELETE_SLIDE",
-                                "SELECT_IMAGE",
-                                "TAG_IMAGE"
+                                "DELETE SLIDE"
                             ]
                         },
                         "payload": {
@@ -188,7 +174,8 @@
                                 },
                                 "paragraph": {
                                     "type": "integer",
-                                    "required": true
+                                    "required": true,
+                                    "nullable": true
                                 },
                                 "slide": {
                                     "type": "string",
