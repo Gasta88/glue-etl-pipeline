@@ -110,8 +110,15 @@
                                     "required": true
                                 },
                                 "media_id": {
-                                    "type": "string",
-                                    "nullable": true
+                                    "nullable": true,
+                                    "anyof": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "integer"
+                                        }
+                                    ]
                                 },
                                 "media_type": {
                                     "type": "string",
@@ -216,8 +223,15 @@
                                     "required": true
                                 },
                                 "media_id": {
-                                    "type": "string",
-                                    "nullable": true
+                                    "nullable": true,
+                                    "anyof": [
+                                        {
+                                            "type": "string"
+                                        },
+                                        {
+                                            "type": "integer"
+                                        }
+                                    ]
                                 },
                                 "media_type": {
                                     "type": "string",
