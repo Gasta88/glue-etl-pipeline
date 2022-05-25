@@ -105,7 +105,7 @@ def compare_files(expected_parquet_files):
     for expected_pq in expected_parquet_files:
         parquet_name = expected_pq.split("/")[-1]
 
-        final_pq = f"/data/output/{parquet_name}"
+        final_pq = f"data/output/{parquet_name}"
         expected_df = spark.read.parquet(expected_pq)
         try:
             final_df = spark.read.parquet(final_pq)
