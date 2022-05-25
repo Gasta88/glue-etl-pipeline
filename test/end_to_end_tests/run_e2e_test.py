@@ -2,8 +2,9 @@ import boto3
 import glob
 import sys
 import time
-import pyarrow.parquet as pq
-from elasticsearch import Elasticsearch
+from pyspark.sql import SparkSession
+from pyarrow import fs
+import os
 
 
 def upload_files(input_dir, landing_bucketname):
@@ -58,41 +59,77 @@ def get_workflow_status(workflow_name, run_id):
         sys.exit(1)
 
 
-def compare_files(landing_bucketname, expected_parquet_files):
+def download_output(landing_bucketname, expected_files):
+    """
+    After the Glue workflow has been completed, download localy the output files.
+
+    :param landing_bucketname: name of the S3 bucket where final files are stored.
+    :param expected_files: list of expected final files.
+    """
+    print("Retrieve output files.")
+    local_fs = fs.LocalFileSystem()
+    s3_fs = fs.S3FileSystem()
+    BATCH_SIZE = 1024 * 1024
+    for expected_f in expected_files:
+        parquet_name = expected_f.split("/")[-1]
+        final_f = f"{landing_bucketname}/data/clean_parquet/{parquet_name}/"
+        all_prefixes = s3_fs.get_file_info(fs.FileSelector(final_f, recursive=True))
+        all_files = [p for p in all_prefixes if p.type.name == "File"]
+        os.makedirs(f"data/output/{parquet_name}")
+        for f in all_files:
+            with s3_fs.open_input_stream(f.path) as in_file:
+                with local_fs.open_output_stream(
+                    f"data/output/{parquet_name}/{f.base_name}"
+                ) as out_file:
+                    while True:
+                        buf = in_file.read(BATCH_SIZE)
+                        if buf:
+                            out_file.write(buf)
+                        else:
+                            break
+    return
+
+
+def compare_files(expected_parquet_files):
     """
     Compare what has been freshly generated to what it is expected.
 
-    :param landing_bucketname: name of the S3 bucket where Parquet files are stored.
     :param expected_parquet_files: list of expected Parquet files.
     """
+    print("Compare expected vs final files.")
+    spark = SparkSession.builder.master("local").getOrCreate()
+    spark.sparkContext.setLogLevel("FATAL")
     results = {}
     test_flag = True
     msg = None
     for expected_pq in expected_parquet_files:
         parquet_name = expected_pq.split("/")[-1]
 
-        final_pq = f"s3://{landing_bucketname}/data/clean_parquet/{parquet_name}"
-        expected_table = pq.read_table(expected_pq)
+        final_pq = f"/data/output/{parquet_name}"
+        expected_df = spark.read.parquet(expected_pq)
         try:
-            final_table = pq.read_table(final_pq)
+            final_df = spark.read.parquet(final_pq)
         except Exception as e:
             test_flag = False
             msg = e
             results[parquet_name] = (test_flag, msg)
             continue
-        if (final_table.num_rows + final_table.num_columns) == 0:
+        final_table_shape = (final_df.count(), len(final_df.columns))
+        expected_table_shape = (expected_df.count(), len(expected_df.columns))
+        if final_table_shape[0] == 0:
             test_flag = False
-            msg = "The final Parquet file is empty"
+            msg = "The final file is empty"
             results[parquet_name] = (test_flag, msg)
             continue
-        test_flag = expected_table.shape == final_table.shape
+        test_flag = expected_table_shape == final_table_shape
         if test_flag == False:
             results[parquet_name] = (
                 test_flag,
-                f"Parquet files are not equals. Expected table is {expected_table.shape}, final table is {final_table.shape}",
+                f"Files are not equals. Expected table is {expected_table_shape}, final table is {final_table_shape}",
             )
         else:
             results[parquet_name] = (test_flag, msg)
+    spark.stop()
     return results
 
 
@@ -118,7 +155,8 @@ def main():
     print(f"Workflow run has finished with status: {status}")
 
     if status == "COMPLETED":
-        test_res = compare_files(landing_bucketname, expected_parquet_files)
+        download_output(landing_bucketname, expected_parquet_files)
+        test_res = compare_files(expected_parquet_files)
         for fname, tpl in test_res.items():
             if not tpl[0]:
                 print(f"{fname} has failed: {tpl[1]}")
