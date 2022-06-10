@@ -106,7 +106,9 @@ def compare_files(expected_parquet_files):
         parquet_name = expected_pq.split("/")[-1]
 
         final_pq = f"data/output/{parquet_name}"
-        expected_df = spark.read.parquet(expected_pq)
+        expected_df = spark.read.parquet(expected_pq).drop(
+            "year", "month", "day", "hour"
+        )
         try:
             final_df = spark.read.parquet(final_pq)
         except Exception as e:
