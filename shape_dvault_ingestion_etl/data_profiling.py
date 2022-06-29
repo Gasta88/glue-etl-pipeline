@@ -155,50 +155,54 @@ def main():
         dirty_dvaults = []
         clean_dvaults = []
         for event in events_arr:
-            try:
-                service_name, service_type = _get_service_name_and_type(event)
-                schema_files = [
-                    s
-                    for s in validator_schemas
-                    if f"{service_name}_{service_type}.json" in s
-                ]
-                if len(schema_files) > 1:
-                    logger.error(
-                        f"Multiple schema files found for {service_name}_{service_type}"
+            if event["source"].lower() != "shape.dvault":
+                logger.info("Discard event unrelated to Shape.")
+                continue
+            else:
+                try:
+                    service_name, service_type = _get_service_name_and_type(event)
+                    schema_files = [
+                        s
+                        for s in validator_schemas
+                        if f"{service_name}_{service_type}.json" in s
+                    ]
+                    if len(schema_files) > 1:
+                        logger.error(
+                            f"Multiple schema files found for {service_name}_{service_type}"
+                        )
+                        sys.exit(1)
+                    else:
+                        validator_schema = json.loads(
+                            s3.cat_file(schema_files[0]).decode("utf-8")
+                        )
+                    profile_flag, errors = run_data_profiling(event, validator_schema)
+                    if (service_name is None) or not (profile_flag):
+                        dirty_dvaults.append(json.dumps(event))
+                    else:
+                        clean_dvaults.append(json.dumps(event))
+                    info_msg = (
+                        f"PROFILER - "
+                        f'EventId:{event["id"]}|'
+                        f"HasPassed:{profile_flag}|"
+                        f"DvaultFile:{file_name}|"
+                        f"ServiceName:{service_name}|"
+                        f"ServiceType:{service_type}|"
+                        f"Errors:{json.dumps(errors)}"
                     )
-                    sys.exit(1)
-                else:
-                    validator_schema = json.loads(
-                        s3.cat_file(schema_files[0]).decode("utf-8")
+                    logger.info(info_msg)
+                except Exception as e:
+                    # Luca's tests or completelly unrelated files might be stored in S3 bucket. Skip them.
+                    logger.warn("Unable to process dvault. Skipped.")
+                    info_msg = (
+                        f"PROFILER - "
+                        f'EventId:{event["id"] if "id" in event else None}|'
+                        f"HasPassed:{False}|"
+                        f"DvaultFile:{file_name}|"
+                        f"ServiceName:{None}|"
+                        f"ServiceType:{None}|"
+                        f"Errors:{e}"
                     )
-                profile_flag, errors = run_data_profiling(event, validator_schema)
-                if (service_name is None) or not (profile_flag):
-                    dirty_dvaults.append(json.dumps(event))
-                else:
-                    clean_dvaults.append(json.dumps(event))
-                info_msg = (
-                    f"PROFILER - "
-                    f'EventId:{event["id"]}|'
-                    f"HasPassed:{profile_flag}|"
-                    f"DvaultFile:{file_name}|"
-                    f"ServiceName:{service_name}|"
-                    f"ServiceType:{service_type}|"
-                    f"Errors:{json.dumps(errors)}"
-                )
-                logger.info(info_msg)
-            except Exception as e:
-                # Luca's tests or completelly unrelated files might be stored in S3 bucket. Skip them.
-                logger.warn("Unable to process dvault. Skipped.")
-                info_msg = (
-                    f"PROFILER - "
-                    f'EventId:{event["id"] if "id" in event else None}|'
-                    f"HasPassed:{False}|"
-                    f"DvaultFile:{file_name}|"
-                    f"ServiceName:{None}|"
-                    f"ServiceType:{None}|"
-                    f"Errors:{e}"
-                )
-                logger.info(info_msg)
+                    logger.info(info_msg)
         save_dvaults(
             clean_dvaults,
             "clean",
