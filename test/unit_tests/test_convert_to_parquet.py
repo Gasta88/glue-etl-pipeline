@@ -100,9 +100,11 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             detail.evaluation.payload.query as payload_query,
+                            detail.evaluation.payload.search_terms as payload_search_terms,
                             detail.evaluation.payload.media_id as payload_media_id,
                             detail.evaluation.payload.media_type as payload_media_type,
                             detail.evaluation.payload.medialib as payload_medialib,
+                            detail.evaluation.payload.search_match as payload_search_match,
                             detail.evaluation.payload.tags as payload_tags,
                             detail.evaluation.payload.caption as payload_caption,
                             time as date_time
@@ -140,6 +142,45 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.payload.text as text,
                             time as date_time
                             from summarizer_event
+                        """,
+            "SIM_EVENT": """
+                        select
+                        account,
+                        detail.id as id,
+                        detail.partitionkey as partition_key,
+                        detail.evaluation.prediction_id as prediction_id,
+                        detail.evaluation.timestamp as unix_timestamp,
+                        detail.evaluation.shape_id as shape_id,
+                        detail.evaluation.type as event_type,
+                        detail.evaluation.reporter as reporter,
+                        detail.evaluation.payload.text as payload_text, 
+                        detail.evaluation.payload.query as payload_query,
+                        detail.evaluation.payload.media_id as payload_media_id,
+                        detail.evaluation.payload.media_type as payload_media_type,
+                        detail.evaluation.payload.medialib as payload_medialib,
+                        detail.evaluation.payload.image_tags as payload_tags,
+                        detail.evaluation.payload.caption as payload_caption,
+                        time as date_time
+                        from sim_event
+                        """,
+            "IT_EVENT": """
+                        select
+                        account,
+                        detail.id as id,
+                        detail.partitionkey as partition_key,
+                        detail.evaluation.prediction_id as prediction_id,
+                        detail.evaluation.timestamp as unix_timestamp,
+                        detail.evaluation.shape_id as shape_id,
+                        detail.evaluation.type as event_type,
+                        detail.evaluation.reporter as reporter,
+                        detail.evaluation.payload.media_id as payload_media_id,
+                        detail.evaluation.payload.media_type as payload_media_type,
+                        detail.evaluation.payload.medialib as payload_medialib,
+                        detail.evaluation.payload.image_tags as payload_tags,
+                        detail.evaluation.payload.caption as payload_caption,
+                        detail.evaluation.payload.source_file as payload_source_file,
+                        time as date_time
+                        from it_event
                         """,
         }
 
