@@ -186,8 +186,8 @@ def main():
     Run main steps in the process_logs Glue Job.
     """
     run_props = get_run_properties()
-    # Skip job run if running end-to-end test pipeline
-    if run_props["ENVIRONMENT"] == "e2e-test":
+    # Skip job run if running end-to-end test and dev pipeline
+    if run_props["ENVIRONMENT"] in ["e2e-test", "dev"]:
         return
     workflow_name = run_props["workflow_name"]
     workflow_run_id = run_props["workflow_run_id"]

@@ -1,7 +1,7 @@
 # region MAIN_SETTINGS
 
 default:
-  image: 228718274899.dkr.ecr.us-east-1.amazonaws.com/docebo-ai/python-3.6-glueetl:latest
+  image: 228718274899.dkr.ecr.us-east-1.amazonaws.com/docebo-ai/python-3.7-glueetl:latest
 
   tags:
     - ai-runner-pool
