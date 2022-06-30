@@ -100,9 +100,11 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             detail.evaluation.payload.query as payload_query,
+                            detail.evaluation.payload.search_terms as payload_search_terms,
                             detail.evaluation.payload.media_id as payload_media_id,
                             detail.evaluation.payload.media_type as payload_media_type,
                             detail.evaluation.payload.medialib as payload_medialib,
+                            detail.evaluation.payload.search_match as payload_search_match,
                             detail.evaluation.payload.tags as payload_tags,
                             detail.evaluation.payload.caption as payload_caption,
                             time as date_time
@@ -141,6 +143,45 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             time as date_time
                             from summarizer_event
                         """,
+            "SIM_EVENT": """
+                        select
+                        account,
+                        detail.id as id,
+                        detail.partitionkey as partition_key,
+                        detail.evaluation.prediction_id as prediction_id,
+                        detail.evaluation.timestamp as unix_timestamp,
+                        detail.evaluation.shape_id as shape_id,
+                        detail.evaluation.type as event_type,
+                        detail.evaluation.reporter as reporter,
+                        detail.evaluation.payload.text as payload_text, 
+                        detail.evaluation.payload.query as payload_query,
+                        detail.evaluation.payload.media_id as payload_media_id,
+                        detail.evaluation.payload.media_type as payload_media_type,
+                        detail.evaluation.payload.medialib as payload_medialib,
+                        detail.evaluation.payload.image_tags as payload_tags,
+                        detail.evaluation.payload.caption as payload_caption,
+                        time as date_time
+                        from sim_event
+                        """,
+            "IT_EVENT": """
+                        select
+                        account,
+                        detail.id as id,
+                        detail.partitionkey as partition_key,
+                        detail.evaluation.prediction_id as prediction_id,
+                        detail.evaluation.timestamp as unix_timestamp,
+                        detail.evaluation.shape_id as shape_id,
+                        detail.evaluation.type as event_type,
+                        detail.evaluation.reporter as reporter,
+                        detail.evaluation.payload.media_id as payload_media_id,
+                        detail.evaluation.payload.media_type as payload_media_type,
+                        detail.evaluation.payload.medialib as payload_medialib,
+                        detail.evaluation.payload.image_tags as payload_tags,
+                        detail.evaluation.payload.caption as payload_caption,
+                        detail.evaluation.payload.source_file as payload_source_file,
+                        time as date_time
+                        from it_event
+                        """,
         }
 
     def tearDown(self):
@@ -174,7 +215,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
         """Test shape_dvaults_etl.convert_to_parquet.get_refined_dataframe method."""
         # headline event
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-staging-stream-1-2021-11-24-20-38-12-0b9e3c9b-8e2a-4437-8000-9d423632119f_HEADLINE.jsonl"
+            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-04-27-15-07-12-731903ee-9d63-47fe-b7ae-b5e4aa2f8a80_CLEAN_HEADLINE.jsonl"
         )
         refined_df = get_refined_dataframe(
             self.spark, df, self.sql_dict, "HEADLINE_EVENT"
@@ -185,7 +226,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
 
         # headline pred
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/predictions/dvault-staging-stream-1-2021-11-24-00-42-04-e376bb8c-f13d-47f6-8d29-1950ba3a07b2_HEADLINE.jsonl"
+            "test/unit_tests/data/convert_to_parquet/predictions/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_HEADLINE.jsonl"
         )
         refined_df = get_refined_dataframe(
             self.spark, df, self.sql_dict, "HEADLINE_PRED"
@@ -196,7 +237,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
 
         # STE event
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-staging-stream-1-2021-11-24-16-24-00-d2a1c999-af9f-47bb-88a8-fadedc9c3bc9_STE.jsonl"
+            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_STE.jsonl"
         )
         refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "STE_EVENT")
 
@@ -205,7 +246,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
 
         # STE pred
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/predictions/dvault-staging-stream-1-2021-11-24-00-48-07-b5fe5db7-776f-42ec-b7e6-e75eb0f4eacf_STE.jsonl"
+            "test/unit_tests/data/convert_to_parquet/predictions/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_STE.jsonl"
         )
         refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "STE_PRED")
 
@@ -214,7 +255,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
 
         # SUMMARIZER event
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-staging-stream-1-2021-11-24-20-38-12-0b9e3c9b-8e2a-4437-8000-9d423632119f_SUMMARIZER.jsonl"
+            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-04-19-18-20-03-193a495d-f9a1-4289-ad92-ec3235140511_CLEAN_SUMMARIZER.jsonl"
         )
         refined_df = get_refined_dataframe(
             self.spark, df, self.sql_dict, "SUMMARIZER_EVENT"
@@ -225,11 +266,29 @@ class ConvertToParquetTestCase(unittest.TestCase):
 
         # SUMMARIZER pred
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/predictions/dvault-staging-stream-1-2021-11-24-00-52-48-9999ffa7-b9f6-4cd0-bc57-f6a658caac96_SUMMARIZER.jsonl"
+            "test/unit_tests/data/convert_to_parquet/predictions/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_SUMMARIZER.jsonl"
         )
         refined_df = get_refined_dataframe(
             self.spark, df, self.sql_dict, "SUMMARIZER_PRED"
         )
+
+        self.assertTrue(len(refined_df.columns) > 0)
+        self.assertTrue(refined_df.count() > 0)
+
+        # IT event
+        df = self.spark.read.json(
+            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_IT.jsonl"
+        )
+        refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "IT_EVENT")
+
+        self.assertTrue(len(refined_df.columns) > 0)
+        self.assertTrue(refined_df.count() > 0)
+
+        # SIM event
+        df = self.spark.read.json(
+            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-04-19-18-20-03-193a495d-f9a1-4289-ad92-ec3235140511_CLEAN_SIM.jsonl"
+        )
+        refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "SIM_EVENT")
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
