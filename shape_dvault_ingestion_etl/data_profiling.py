@@ -155,7 +155,8 @@ def main():
         dirty_dvaults = []
         clean_dvaults = []
         for event in events_arr:
-            if event["source"].lower() != "shape.dvault":
+            dvault_source = event.get("source", "")
+            if dvault_source.lower() != "shape.dvault":
                 logger.info("Discard event unrelated to Shape.")
                 continue
             else:
