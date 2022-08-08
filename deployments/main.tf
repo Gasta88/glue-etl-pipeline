@@ -12,8 +12,8 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "terraform-ai-dev-states"
-    key    = "ai-terraform-state-files/dvault-shape-ingestion-staging.tfstate"
+    bucket = "terraform-states"
+    key    = "terraform-state-files/dvault-shape-ingestion-staging.tfstate"
     region = "us-east-1"
   }
 }
