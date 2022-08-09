@@ -16,7 +16,7 @@ logger.addHandler(handler)
 def get_run_properties():
     """Return enhanced job properties.
 
-    :return config: dictionary with properties used in flat_dvaults Glue Job.
+    :return config: dictionary with properties used in flat_jsons Glue Job.
     """
     from awsglue.utils import getResolvedOptions
     from awsglue.context import GlueContext
@@ -48,17 +48,15 @@ def get_run_properties():
         obj.key for obj in list(bucket.objects.filter(Prefix="data/flat_jsons"))
     ]
     config["TABLE_NAMES"] = [
-        "HEADLINE_PRED",
-        "HEADLINE_EVENT",
-        "STE_PRED",
-        "STE_EVENT",
-        "SUMMARIZER_PRED",
-        "SUMMARIZER_EVENT",
-        "SIM_EVENT",
-        "IT_EVENT",
+        "MICROONE_PRED",
+        "MICROONE_EVENT",
+        "MICROTWO_PRED",
+        "MICROTWO_EVENT",
+        "MICROTHREE_PRED",
+        "MICROTHREE_EVENT",
     ]
     config["SQL_DICT"] = {
-        "HEADLINE_PRED": """
+        "MICROTWO_PRED": """
                             select
                             account,
                             detail.id as id,
@@ -70,9 +68,9 @@ def get_run_properties():
                             detail.prediction.input.transcript as transcript,
                             detail.prediction.output.headline as headline,
                             time as date_time
-                            from headline_pred
+                            from microtwo_pred
                         """,
-        "HEADLINE_EVENT": """
+        "MICROTWO_EVENT": """
                             select
                             account,
                             detail.id as id,
@@ -84,9 +82,9 @@ def get_run_properties():
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             time as date_time
-                            from headline_event
+                            from microtwo_event
                         """,
-        "STE_PRED": """
+        "MICROTHREE_PRED": """
                             select
                             account,
                             detail.id as id,
@@ -101,9 +99,9 @@ def get_run_properties():
                             detail.prediction.output.search_terms as search_terms,
                             detail.prediction.output.sentence as sentence,
                             time as date_time
-                            from ste_pred
+                            from microthree_pred
                         """,
-        "STE_EVENT": """
+        "MICROTHREE_EVENT": """
                             select
                             account,
                             detail.id as id,
@@ -123,9 +121,9 @@ def get_run_properties():
                             detail.evaluation.payload.tags as payload_tags,
                             detail.evaluation.payload.caption as payload_caption,
                             time as date_time
-                            from ste_event
+                            from microthree_event
                         """,
-        "SUMMARIZER_PRED": """
+        "MICROONE_PRED": """
                             select
                             account,
                             detail.id as id,
@@ -140,9 +138,9 @@ def get_run_properties():
                             detail.prediction.output.metadata as output_metadata,
                             detail.prediction.output.skipped_paragraphs as output_skipped_paragraphs,
                             time as date_time
-                            from summarizer_pred
+                            from microone_pred
                         """,
-        "SUMMARIZER_EVENT": """
+        "MICROONE_EVENT": """
                             select
                             account,
                             detail.id as id,
@@ -156,46 +154,7 @@ def get_run_properties():
                             detail.evaluation.payload.slide as slide,
                             detail.evaluation.payload.text as text,
                             time as date_time
-                            from summarizer_event
-                        """,
-        "SIM_EVENT": """
-                        select
-                        account,
-                        detail.id as id,
-                        detail.partitionkey as partition_key,
-                        detail.evaluation.prediction_id as prediction_id,
-                        detail.evaluation.timestamp as unix_timestamp,
-                        detail.evaluation.shape_id as shape_id,
-                        detail.evaluation.type as event_type,
-                        detail.evaluation.reporter as reporter,
-                        detail.evaluation.payload.text as payload_text, 
-                        detail.evaluation.payload.query as payload_query,
-                        detail.evaluation.payload.media_id as payload_media_id,
-                        detail.evaluation.payload.media_type as payload_media_type,
-                        detail.evaluation.payload.medialib as payload_medialib,
-                        detail.evaluation.payload.image_tags as payload_tags,
-                        detail.evaluation.payload.caption as payload_caption,
-                        time as date_time
-                        from sim_event
-                        """,
-        "IT_EVENT": """
-                        select
-                        account,
-                        detail.id as id,
-                        detail.partitionkey as partition_key,
-                        detail.evaluation.prediction_id as prediction_id,
-                        detail.evaluation.timestamp as unix_timestamp,
-                        detail.evaluation.shape_id as shape_id,
-                        detail.evaluation.type as event_type,
-                        detail.evaluation.reporter as reporter,
-                        detail.evaluation.payload.media_id as payload_media_id,
-                        detail.evaluation.payload.media_type as payload_media_type,
-                        detail.evaluation.payload.medialib as payload_medialib,
-                        detail.evaluation.payload.image_tags as payload_tags,
-                        detail.evaluation.payload.caption as payload_caption,
-                        detail.evaluation.payload.source_file as payload_source_file,
-                        time as date_time
-                        from it_event
+                            from microone_event
                         """,
     }
     return config

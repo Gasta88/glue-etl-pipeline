@@ -20,7 +20,7 @@ logger.info("Get run properties for the Glue workflow.")
 def get_run_properties():
     """Return enhanced job properties.
 
-    :return config: dictionary with properties used in flat_dvaults Glue Job."""
+    :return config: dictionary with properties used in flat_efs Glue Job."""
     from awsglue.utils import getResolvedOptions
 
     config = {}
@@ -35,11 +35,11 @@ def get_run_properties():
         Name=workflow_name, RunId=workflow_run_id
     )["RunProperties"]
     config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
-    config["DVAULT_PREFIX"] = {
-        "dirty": "data/dirty_dvaults",
-        "clean": "data/clean_dvaults",
+    config["EF_PREFIX"] = {
+        "dirty": "data/dirty_efs",
+        "clean": "data/clean_efs",
     }
-    config["DVAULT_FILES"] = run_properties["dvault_files"].split(";")
+    config["EVENT_FILES"] = run_properties["event_files"].split(";")
     return config
 
 
@@ -67,10 +67,10 @@ def _get_service_name_and_type(el):
     :return service_type: string for EVENT or PREDICTION.
     """
     service_name = None
-    if el["detail"]["type"] == "DVaultPredictionEvent":
+    if el["detail"]["type"] == "EFPredictionEvent":
         service_name = el["detail"]["prediction"]["service"]
         service_type = "prediction"
-    if el["detail"]["type"] == "DVaultEvaluationEvent":
+    if el["detail"]["type"] == "EFEvaluationEvent":
         service_name = el["detail"]["evaluation"].get("service", None)
         if service_name is None:
             # old style EVENT dvault files
@@ -84,10 +84,6 @@ def _get_service_name_and_type(el):
                     -1
                 ]
         service_type = "event"
-        if service_name == "semanticImageMatcher":
-            service_name = "sim"
-        if service_name == "imageTagging":
-            service_name = "it"
     return (service_name, service_type)
 
 
@@ -114,7 +110,7 @@ def split_files(file_content):
     return data_arr
 
 
-def save_dvaults(el_list, el_type, file_name, dvault_prefix, landing_bucketname):
+def save_efs(el_list, el_type, file_name, ef_prefix, landing_bucketname):
     """
     Save onto the correct prefix the dvault profiled.
 
@@ -126,7 +122,7 @@ def save_dvaults(el_list, el_type, file_name, dvault_prefix, landing_bucketname)
         s3 = boto3.resource("s3")
         logger.info(f"There are {len(el_list)} {el_type.upper()} elements.")
         tmp_key = f"/tmp/{file_name}_{el_type.upper()}"
-        output_key = f"{dvault_prefix.get(el_type)}/{file_name}_{el_type.upper()}"
+        output_key = f"{ef_prefix.get(el_type)}/{file_name}_{el_type.upper()}"
         obj = s3.Object(landing_bucketname, output_key)
         with open(tmp_key, "wb") as outfile:
             outfile.write("".join(el_list).encode())
@@ -146,17 +142,17 @@ def main():
         f"s3://{f}"
         for f in s3.glob(f's3://{run_props["LANDING_BUCKETNAME"]}/dependencies/*.json')
     ]
-    for obj_key in run_props["DVAULT_FILES"]:
+    for obj_key in run_props["EVENT_FILES"]:
         logger.info(f"Profiling file {obj_key}.")
         file_name = obj_key.split("/")[-1]
         file_content = s3.cat_file(f"s3://{obj_key}").decode("utf-8")
 
         events_arr = split_files(file_content)
-        dirty_dvaults = []
-        clean_dvaults = []
+        dirty_efs = []
+        clean_efs = []
         for event in events_arr:
             dvault_source = event.get("source", "")
-            if dvault_source.lower() != "shape.dvault":
+            if dvault_source.lower() != "app.event.file":
                 logger.info("Discard event unrelated to Shape.")
                 continue
             else:
@@ -178,14 +174,14 @@ def main():
                         )
                     profile_flag, errors = run_data_profiling(event, validator_schema)
                     if (service_name is None) or not (profile_flag):
-                        dirty_dvaults.append(json.dumps(event))
+                        dirty_efs.append(json.dumps(event))
                     else:
-                        clean_dvaults.append(json.dumps(event))
+                        clean_efs.append(json.dumps(event))
                     info_msg = (
                         f"PROFILER - "
                         f'EventId:{event["id"]}|'
                         f"HasPassed:{profile_flag}|"
-                        f"DvaultFile:{file_name}|"
+                        f"EventFile:{file_name}|"
                         f"ServiceName:{service_name}|"
                         f"ServiceType:{service_type}|"
                         f"Errors:{json.dumps(errors)}"
@@ -193,29 +189,29 @@ def main():
                     logger.info(info_msg)
                 except Exception as e:
                     # Luca's tests or completelly unrelated files might be stored in S3 bucket. Skip them.
-                    logger.warn("Unable to process dvault. Skipped.")
+                    logger.warn("Unable to process event file. Skipped.")
                     info_msg = (
                         f"PROFILER - "
                         f'EventId:{event["id"] if "id" in event else None}|'
                         f"HasPassed:{False}|"
-                        f"DvaultFile:{file_name}|"
+                        f"EventFile:{file_name}|"
                         f"ServiceName:{None}|"
                         f"ServiceType:{None}|"
                         f"Errors:{e}"
                     )
                     logger.info(info_msg)
-        save_dvaults(
-            clean_dvaults,
+        save_efs(
+            clean_efs,
             "clean",
             file_name,
-            run_props["DVAULT_PREFIX"],
+            run_props["EF_PREFIX"],
             run_props["LANDING_BUCKETNAME"],
         )
-        save_dvaults(
-            dirty_dvaults,
+        save_efs(
+            dirty_efs,
             "dirty",
             file_name,
-            run_props["DVAULT_PREFIX"],
+            run_props["EF_PREFIX"],
             run_props["LANDING_BUCKETNAME"],
         )
 

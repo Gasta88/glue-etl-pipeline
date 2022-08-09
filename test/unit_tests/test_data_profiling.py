@@ -1,6 +1,6 @@
 import unittest
 import warnings
-from shape_dvault_ingestion_etl.data_profiling import run_data_profiling
+from ef_ingestion_etl.data_profiling import run_data_profiling
 import json
 
 

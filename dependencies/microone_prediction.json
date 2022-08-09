@@ -11,7 +11,7 @@
         "type": "string",
         "required": true,
         "allowed": [
-            "DVaultPredictionEvent"
+            "EFPredictionEvent"
         ]
     },
     "source": {
@@ -42,7 +42,7 @@
                 "type": "string",
                 "required": true,
                 "allowed": [
-                    "DVaultPredictionEvent"
+                    "EFPredictionEvent"
                 ]
             },
             "timestamp": {
@@ -81,7 +81,7 @@
                         "type": "string",
                         "required": true,
                         "allowed": [
-                            "summarizer"
+                            "microone"
                         ]
                     },
                     "timestamp": {

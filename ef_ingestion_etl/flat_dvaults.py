@@ -19,7 +19,7 @@ logger.info("Get run properties for the Glue workflow.")
 def get_run_properties():
     """Return enhanced job properties.
 
-    :return config: dictionary with properties used in flat_dvaults Glue Job."""
+    :return config: dictionary with properties used in flat_events Glue Job."""
     from awsglue.utils import getResolvedOptions
 
     config = {}
@@ -46,9 +46,9 @@ def _recast_score_to_float(el, service_name):
     Cast score attribute as FLOAT because missing scores are labelled as INT64 (-1).
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only SUMMARIZER is accepted).
+    :param service_name: element service name (only MICROONE is accepted).
     """
-    if service_name == "summarizer":
+    if service_name == "microone":
         # If attribute is missing (due to undocumented reasons), return None
         if "sentences_scores" in el["detail"]["prediction"]["input"]:
             for i, sentence_score in enumerate(
@@ -65,15 +65,15 @@ def _recast_score_to_float(el, service_name):
 
 def _recast_paragraph_to_str(el, service_name):
     """
-    Cast to STRING the paragraph attribute in SUMMARIZER EVENTS from INT64.
+    Cast to STRING the paragraph attribute in MICROONE EVENTS from INT64.
     This is due to the presence of "null" values that account for STRING data type event
     if the majority of the values are numeric.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only SUMMARIZER is accepted).
+    :param service_name: element service name (only MICROONE is accepted).
     :return el: corrected element, if criterias are satisfied.
     """
-    if service_name == "summarizer":
+    if service_name == "microone":
         # Skip over DELETE type events since they do not have a payload attribute.
         if el["detail"]["evaluation"]["type"] != "DELETE":
             paragraph = el["detail"]["evaluation"]["payload"].get("paragraph", None)
@@ -84,13 +84,13 @@ def _recast_paragraph_to_str(el, service_name):
 
 def _populate_metadata_field(el, service_name):
     """
-    Enable metadata field in SUMMARIZER PREDICTIONS.
+    Enable metadata field in MICROONE PREDICTIONS.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only SUMMARIZER is accepted).
+    :param service_name: element service name (only MICROONE is accepted).
     :return el: corrected element, if criterias are satisfied.
     """
-    if service_name == "summarizer":
+    if service_name == "microone":
         if "metadata" not in el["detail"]["prediction"]["output"]:
             el["detail"]["prediction"]["output"]["metadata"] = None
     return el
@@ -98,13 +98,13 @@ def _populate_metadata_field(el, service_name):
 
 def _populate_skipped_paragraphs_field(el, service_name):
     """
-    Enable skipped_paragraphs field in SUMMARIZER PREDICTIONS.
+    Enable skipped_paragraphs field in MICROONE PREDICTIONS.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only SUMMARIZER is accepted).
+    :param service_name: element service name (only MICROONE is accepted).
     :return el: corrected element, if criterias are satisfied.
     """
-    if service_name == "summarizer":
+    if service_name == "microone":
         if "skipped_paragraphs" not in el["detail"]["prediction"]["output"]:
             el["detail"]["prediction"]["output"]["skipped_paragraphs"] = None
     return el
@@ -112,13 +112,13 @@ def _populate_skipped_paragraphs_field(el, service_name):
 
 def _convert_query_and_tags(el, service_name):
     """
-    Convert query and tags attribute in STE, SEMANTIC_IMAGE_MATCHER and IMAGE_TAGGING EVENTS from string to list for all types.
+    Convert query and tags attribute in MICROTHREE EVENTS from string to list for all types.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only STE and SIM are accepted).
+    :param service_name: element service name (only MICROTHREE and SIM are accepted).
     :return el: corrected element, if criterias are satisfied.
     """
-    if service_name == "ste":
+    if service_name == "microthree":
         query = el["detail"]["evaluation"]["payload"].get("query", None)
         if type(query) is str:
             if query == "null":
@@ -133,46 +133,23 @@ def _convert_query_and_tags(el, service_name):
                 el["detail"]["evaluation"]["payload"]["tags"] = []
             else:
                 el["detail"]["evaluation"]["payload"]["tags"] = [tags]
-    if service_name == "sim":
-        query = el["detail"]["evaluation"]["payload"].get("query", None)
-        if type(query) is str:
-            if query == "null":
-                # query can be nullable, even if it's stated otherwise in the docs
-                el["detail"]["evaluation"]["payload"]["query"] = []
-            else:
-                el["detail"]["evaluation"]["payload"]["query"] = [query]
-        tags = el["detail"]["evaluation"]["payload"].get("image_tags", None)
-        if type(tags) is str:
-            if tags == "null":
-                # tags can be nullable
-                el["detail"]["evaluation"]["payload"]["image_tags"] = []
-            else:
-                el["detail"]["evaluation"]["payload"]["image_tags"] = [tags]
-    if service_name == "it":
-        tags = el["detail"]["evaluation"]["payload"].get("image_tags", None)
-        if type(tags) is str:
-            if tags == "null":
-                # tags can be nullable
-                el["detail"]["evaluation"]["payload"]["image_tags"] = []
-            else:
-                el["detail"]["evaluation"]["payload"]["image_tags"] = [tags]
     return el
 
 
 def _replace_image_uri(el, service_name, media_bucketname, all_medias):
     """
-    Replace media_id attribute for STE and SEMANTIC_IMAGE_MATCHER EVENTS only to the S3 URI.
+    Replace media_id attribute for MICROTHREE EVENTS only to the S3 URI.
 
     :param el: dictionary that represent the event.
-    :param service_name: element service name (only STE and SIM are accepted).
+    :param service_name: element service name (only MICROTHREE and SIM are accepted).
     :param media_bucketname: string that define the S3 bucket with Shape media.
     :param al_medias: list of keys inside the S3 Shape media bucket.
     :return el: corrected element, if criterias are satisfied.
     """
-    if service_name in ["ste", "sim"]:
-        # ADD_TAG type events do not have a media_id and media_type attributes for STE
+    if service_name == "microthree":
+        # ADD_TAG type events do not have a media_id and media_type attributes for MICROTHREE
         if el["detail"]["evaluation"]["type"] != "ADD_TAG":
-            # If attributes are missing (for some undocumented reasons), do not alter dvault event
+            # If attributes are missing (for some undocumented reasons), do not alter event event
             if (
                 "media_id" in el["detail"]["evaluation"]["payload"]
                 and "medialib" in el["detail"]["evaluation"]["payload"]
@@ -208,23 +185,19 @@ def _replace_image_uri(el, service_name, media_bucketname, all_medias):
 
 def _get_service_name(el):
     """
-    Retrieve service name from dvault file.
+    Retrieve service name from event file.
 
     :param el: dictionary that represent the event.
     :return service_name: string that reresent the dvaut file service name.
     """
     service_name = None
-    if el["detail"]["type"] == "DVaultPredictionEvent":
+    if el["detail"]["type"] == "EFPredictionEvent":
         service_name = el["detail"]["prediction"]["service"]
-    if el["detail"]["type"] == "DVaultEvaluationEvent":
+    if el["detail"]["type"] == "EFEvaluationEvent":
         service_name = el["detail"]["evaluation"].get("service", None)
         if service_name is None:
-            # old style EVENT dvault files
+            # old style EVENT event files
             service_name = el["detail"]["evaluation"]["prediction_id"].split("#")[-1]
-        if service_name == "semanticImageMatcher":
-            service_name = "sim"
-        if service_name == "imageTagging":
-            service_name = "it"
     return service_name
 
 
@@ -233,12 +206,12 @@ def split_files(file_content):
     Divide Firehose Kinesis file in PREDICTIONS and EVENTS files.
     Label the dedicated service name in the file name.
 
-    :param file_content: dvault file content.
+    :param file_content: event file content.
     :return predictions_arr: list of JSON predictions extracted from the file
     :return events_arr: list of JSON events extracted from the file
     """
-    predictions_arr = {"summarizer": [], "headline": [], "ste": []}
-    events_arr = {"summarizer": [], "headline": [], "ste": [], "sim": [], "it": []}
+    predictions_arr = {"microone": [], "microtwo": [], "microthree": []}
+    events_arr = {"microone": [], "microtwo": [], "microthree": []}
     decoder = json.JSONDecoder()
     content_length = len(file_content)
     decode_index = 0
@@ -253,9 +226,9 @@ def split_files(file_content):
         try:
             flat_el = obj
             service_name = _get_service_name(flat_el)
-            if flat_el["detail"]["type"] == "DVaultPredictionEvent":
+            if flat_el["detail"]["type"] == "EFPredictionEvent":
                 predictions_arr[service_name].append(flat_el)
-            elif flat_el["detail"]["type"] == "DVaultEvaluationEvent":
+            elif flat_el["detail"]["type"] == "EFEvaluationEvent":
                 events_arr[service_name].append(flat_el)
             else:
                 e = f'Unrecognized event type inside file: {flat_el["detail"]["type"]}'
@@ -273,7 +246,7 @@ def save_flat_json(el_dict, el_type, file_name, landing_bucketname):
 
     :param el_dict: dictionary made of arrays of dictionaries.
     :param el_type: either EVENTS or PREDICTIONS.
-    :param file_name: dvault file name.
+    :param file_name: event file name.
     :param landing_bucketname: string that refer t S3 bucket where file is going to be saved.
     """
     s3 = boto3.resource("s3")
@@ -297,11 +270,11 @@ def save_flat_json(el_dict, el_type, file_name, landing_bucketname):
 
 def main():
     """
-    Run main steps in the flat_dvaults Glue Job.
+    Run main steps in the flat_events Glue Job.
     """
     run_props = get_run_properties()
     s3 = s3fs.S3FileSystem()
-    for obj_key in s3.ls(f's3://{run_props["LANDING_BUCKETNAME"]}/data/clean_dvaults'):
+    for obj_key in s3.ls(f's3://{run_props["LANDING_BUCKETNAME"]}/data/clean_efs'):
         logger.info(f"Splitting file {obj_key}.")
         file_name = obj_key.split("/")[-1]
         file_content = s3.cat_file(f"s3://{obj_key}").decode("utf-8")

@@ -1,7 +1,7 @@
 from pyspark.sql import SparkSession
 import unittest
 import warnings
-from shape_dvault_ingestion_etl.convert_to_parquet import (
+from ef_ingestion_etl.convert_to_parquet import (
     get_spark_dataframe,
     get_refined_dataframe,
 )

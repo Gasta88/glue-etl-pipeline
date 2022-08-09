@@ -31,74 +31,74 @@ def _is_workflow_run_valid(workflow_run):
     return is_valid
 
 
-def get_processed_dvaults(workflow_name):
+def get_processed_efs(workflow_name):
     """
-    Return list of dvault files that have been already processed.
+    Return list of event files that have been already processed.
 
     :param workflow_name: name of the Glue workflow.
-    :return dvaults: list of dvault file names.
+    :return events: list of event file names.
     """
     glue = boto3.client("glue")
-    dvault_arrs = []
-    logger.info("Get dvault files already processed by older workflow runs.")
+    event_arrs = []
+    logger.info("Get event files already processed by older workflow runs.")
     try:
         workflow_runs = glue.get_workflow_runs(Name=workflow_name)
     except:
         logger.info(f"No runs for workflow {workflow_name}")
         return []
     for run in workflow_runs["Runs"]:
-        # Get dvault files only if workflow run has run completelly, otherwise skip it.
+        # Get event files only if workflow run has run completelly, otherwise skip it.
         if _is_workflow_run_valid(run):
-            dvault_arrs.append(run["WorkflowRunProperties"]["dvault_files"].split(";"))
+            event_arrs.append(run["WorkflowRunProperties"]["event_files"].split(";"))
     next_token = workflow_runs.get("NextToken", None)
     while next_token is not None:
         workflow_runs = glue.get_workflow_runs(Name=workflow_name, NextToken=next_token)
         for run in workflow_runs["Runs"]:
-            # Get dvault files only if workflow run has run completelly, otherwise skip it.
+            # Get event files only if workflow run has run completelly, otherwise skip it.
             if _is_workflow_run_valid(run):
-                dvault_arrs.append(
-                    run["WorkflowRunProperties"]["dvault_files"].split(";")
+                event_arrs.append(
+                    run["WorkflowRunProperties"]["event_files"].split(";")
                 )
         next_token = workflow_runs.get("NextToken", None)
-    dvaults = [item for sublist in dvault_arrs for item in sublist]
-    logger.info(f"Found {len(dvaults)} old dvaults.")
-    return dvaults
+    events = [item for sublist in event_arrs for item in sublist]
+    logger.info(f"Found {len(events)} old event files.")
+    return events
 
 
-def get_dvaults_from_source(source_bucketname):
+def get_efs_from_source(source_bucketname):
     """
-    Return list of dvault files ready to be processed from S3 source bucket.
+    Return list of event files ready to be processed from S3 source bucket.
 
     :param source_bucketname: name of source S3 bucket.
-    :return dvaults: list of dvault file names.
+    :return events: list of event file names.
     """
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(source_bucketname)
-    dvaults = []
-    logger.info("Get all available dvault files.")
-    dvaults = [f"{source_bucketname}/{obj.key}" for obj in bucket.objects.all()]
-    logger.info(f"Found {len(dvaults)} new dvaults.")
-    return dvaults
+    events = []
+    logger.info("Get all available event files.")
+    events = [f"{source_bucketname}/{obj.key}" for obj in bucket.objects.all()]
+    logger.info(f"Found {len(events)} new event files.")
+    return events
 
 
-def get_dvaults_from_s3(landing_bucketname):
+def get_efs_from_s3(landing_bucketname):
     """
-    Return list of dvault files ready to be processed from S3 landing bucket.
+    Return list of event files ready to be processed from S3 landing bucket.
     only for end-to-end test run via CI/CD pipelines
 
     :param source_bucketname: name of source S3 bucket.
-    :return dvaults: list of dvault file names.
+    :return events: list of event file names.
     """
     s3 = boto3.resource("s3")
     bucket = s3.Bucket(landing_bucketname)
-    dvaults = []
-    logger.info("Get all available dvault files.")
-    dvaults = [
+    events = []
+    logger.info("Get all available event files.")
+    events = [
         f"{landing_bucketname}/{obj.key}"
         for obj in bucket.objects.filter(Prefix="data/raw/")
     ]
-    logger.info(f"Found {len(dvaults)} new dvaults.")
-    return dvaults
+    logger.info(f"Found {len(events)} new event files.")
+    return events
 
 
 def main():
@@ -130,38 +130,34 @@ def main():
     if state_to_set == "STARTED":
         # Handle different behaviour when running PROD pipeline against E2E-TEST pipeline
         if env == "e2e-test":
-            new_dvault_files = get_dvaults_from_s3(run_properties["landing_bucketname"])
+            new_event_files = get_efs_from_s3(run_properties["landing_bucketname"])
         else:
-            new_dvault_files = get_dvaults_from_source(
-                run_properties["source_bucketname"]
-            )
-        # If no new dvaults are to be processed, do not start the workflow.
-        if len(new_dvault_files) == 0:
-            logger.info("No new dvault files in S3 bucket.")
+            new_event_files = get_efs_from_source(run_properties["source_bucketname"])
+        # If no new events are to be processed, do not start the workflow.
+        if len(new_event_files) == 0:
+            logger.info("No new event files in S3 bucket.")
             response = glue.stop_workflow_run(Name=workflow_name, RunId=workflow_run_id)
         else:
-            old_dvault_files = get_processed_dvaults(workflow_name)
-            # If no old processed dvaults are available, use the new ones only.
-            if len(old_dvault_files) == 0:
-                logger.info("No old dvault files are available.")
-                dvault_files = new_dvault_files
-                dvault_files.sort()
+            old_event_files = get_processed_efs(workflow_name)
+            # If no old processed events are available, use the new ones only.
+            if len(old_event_files) == 0:
+                logger.info("No old event files are available.")
+                event_files = new_event_files
+                event_files.sort()
             else:
-                logger.info("Compare new against old set of dvault files.")
-                new_dvault_files.sort()
-                old_dvault_files.sort()
-                dvault_files = [
-                    f for f in new_dvault_files if f not in old_dvault_files
-                ]
+                logger.info("Compare new against old set of event files.")
+                new_event_files.sort()
+                old_event_files.sort()
+                event_files = [f for f in new_event_files if f not in old_event_files]
             # AWS Glue Workflow has a max 64KB per parameter, therefore only 500 files each time.
-            logger.info(dvault_files)
-            if len(dvault_files) == 0:
-                logger.info("No pending dvault files are available.")
+            logger.info(event_files)
+            if len(event_files) == 0:
+                logger.info("No pending event files are available.")
                 response = glue.stop_workflow_run(
                     Name=workflow_name, RunId=workflow_run_id
                 )
             else:
-                run_properties["dvault_files"] = ";".join(dvault_files[:500])
+                run_properties["event_files"] = ";".join(event_files[:500])
 
     logger.info("Set new set of run_properties")
     glue.put_workflow_run_properties(

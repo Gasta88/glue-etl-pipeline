@@ -82,3 +82,10 @@ The E2E testing performed inside the project comprise a dev deployment of the in
 - Compare content of final Parquet files with expected results in _test/end_to_end_tests/data/expected_.
 
 If _final_ and _expected_ files are different in their own content, the job fails.
+
+## How to run the project
+
+### Prerequisites:
+
+- S3 backend for Terraform
+- raw event files

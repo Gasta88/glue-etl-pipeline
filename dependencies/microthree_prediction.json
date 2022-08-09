@@ -11,7 +11,7 @@
         "type": "string",
         "required": true,
         "allowed": [
-            "DVaultPredictionEvent"
+            "EFPredictionEvent"
         ]
     },
     "source": {
@@ -42,7 +42,7 @@
                 "type": "string",
                 "required": true,
                 "allowed": [
-                    "DVaultPredictionEvent"
+                    "EFPredictionEvent"
                 ]
             },
             "timestamp": {
@@ -57,15 +57,15 @@
                 "type": "dict",
                 "required": true,
                 "schema": {
-                    "service_version": {
+                    "context": {
                         "type": "dict",
                         "required": true,
                         "schema": {
-                            "software": {
-                                "type": "string"
+                            "paragraph": {
+                                "type": "integer"
                             },
-                            "model": {
-                                "type": "string"
+                            "sentence": {
+                                "type": "integer"
                             }
                         }
                     },
@@ -81,7 +81,7 @@
                         "type": "string",
                         "required": true,
                         "allowed": [
-                            "headline"
+                            "ste"
                         ]
                     },
                     "timestamp": {
@@ -92,7 +92,7 @@
                         "type": "dict",
                         "required": true,
                         "schema": {
-                            "transcript": {
+                            "paragraph": {
                                 "type": "string",
                                 "required": true
                             }
@@ -102,11 +102,22 @@
                         "type": "dict",
                         "required": true,
                         "schema": {
-                            "headline": {
+                            "sentence": {
+                                "type": "string",
+                                "required": true
+                            },
+                            "search_terms": {
                                 "type": "list",
                                 "required": true,
                                 "schema": {
                                     "type": "string"
+                                }
+                            },
+                            "scores": {
+                                "type": "list",
+                                "required": true,
+                                "schema": {
+                                    "type": "float"
                                 }
                             }
                         }

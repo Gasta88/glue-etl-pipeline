@@ -11,7 +11,7 @@
         "type": "string",
         "required": true,
         "allowed": [
-            "DVaultEvaluationEvent"
+            "EFEvaluationEvent"
         ]
     },
     "source": {
@@ -42,7 +42,7 @@
                 "type": "string",
                 "required": true,
                 "allowed": [
-                    "DVaultEvaluationEvent"
+                    "EFEvaluationEvent"
                 ]
             },
             "timestamp": {
@@ -77,7 +77,7 @@
                         "service": {
                             "type": "string",
                             "allowed": [
-                                "ste"
+                                "microthree"
                             ]
                         },
                         "timestamp": {
@@ -134,7 +134,7 @@
                                     "nullable": true,
                                     "allowed": [
                                         "MYLIB",
-                                        "SHAPELIB"
+                                        "EXTERNALLIB"
                                     ]
                                 },
                                 "query": {
@@ -190,7 +190,7 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "ste"
+                                "microthree"
                             ]
                         },
                         "timestamp": {
@@ -247,7 +247,7 @@
                                     "nullable": true,
                                     "allowed": [
                                         "MYLIB",
-                                        "SHAPELIB"
+                                        "EXTERNALLIB"
                                     ]
                                 },
                                 "query": {

@@ -11,7 +11,7 @@
         "type": "string",
         "required": true,
         "allowed": [
-            "DVaultEvaluationEvent"
+            "EFEvaluationEvent"
         ]
     },
     "source": {
@@ -42,7 +42,7 @@
                 "type": "string",
                 "required": true,
                 "allowed": [
-                    "DVaultEvaluationEvent"
+                    "EFEvaluationEvent"
                 ]
             },
             "timestamp": {
@@ -77,7 +77,7 @@
                         "service": {
                             "type": "string",
                             "allowed": [
-                                "headline"
+                                "microone"
                             ]
                         },
                         "timestamp": {
@@ -88,15 +88,16 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "user",
-                                "builder"
+                                "user"
                             ]
                         },
                         "type": {
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "PUBLISH"
+                                "PUBLISH",
+                                "DELETE",
+                                "DELETE SLIDE"
                             ]
                         },
                         "payload": {
@@ -106,6 +107,15 @@
                                 "text": {
                                     "type": "string",
                                     "required": true
+                                },
+                                "paragraph": {
+                                    "type": "integer",
+                                    "required": true,
+                                    "nullable": true
+                                },
+                                "slide": {
+                                    "type": "string",
+                                    "nullable": true
                                 }
                             }
                         }
@@ -131,7 +141,7 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "headline"
+                                "microone"
                             ]
                         },
                         "timestamp": {
@@ -142,15 +152,16 @@
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "user",
-                                "builder"
+                                "user"
                             ]
                         },
                         "type": {
                             "type": "string",
                             "required": true,
                             "allowed": [
-                                "PUBLISH"
+                                "PUBLISH",
+                                "DELETE",
+                                "DELETE SLIDE"
                             ]
                         },
                         "payload": {
@@ -160,6 +171,15 @@
                                 "text": {
                                     "type": "string",
                                     "required": true
+                                },
+                                "paragraph": {
+                                    "type": "integer",
+                                    "required": true,
+                                    "nullable": true
+                                },
+                                "slide": {
+                                    "type": "string",
+                                    "nullable": true
                                 }
                             }
                         }

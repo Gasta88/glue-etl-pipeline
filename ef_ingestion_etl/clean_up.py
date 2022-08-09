@@ -29,7 +29,6 @@ def get_run_properties():
     )["RunProperties"]
 
     config["BUCKET_NAME"] = run_properties["landing_bucketname"]
-    # DVAULT_FILES = run_properties["dvault_files"].split(";")
     return config
 
 
@@ -51,7 +50,7 @@ def main():
         obj.key for obj in list(bucket.objects.filter(Prefix="data/clean_dvaults"))
     ]:
         s3.Object(run_props["BUCKET_NAME"], key).delete()
-    logger.info("data/clean_dvaults/ prefix clean-up is complete.")
+    logger.info("data/clean_efs/ prefix clean-up is complete.")
 
     logger.info("Finishing environment clean-up.")
 
