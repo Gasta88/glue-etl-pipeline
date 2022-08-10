@@ -3,30 +3,28 @@ import glob
 import sys
 import time
 from pyspark.sql import SparkSession
-from pyarrow import fs
-import os
+import subprocess
 
 
 def upload_files(input_dir, landing_bucketname):
     """
-    Load dvault files onto S3 bucket.
+    Load event file files onto S3 bucket.
 
     :param input_dir: location of the input files.
     :param landing_bucketname: name of the destination S3 bucket.
     """
-    input_files = glob.glob(f"{input_dir}/*")
-    s3 = boto3.resource("s3", region_name="us-east-1")
-    for f in input_files:
-        f_name = f.split("/")[-1]
-        output_key = f"data/raw/{f_name}"
-        obj = s3.Object(landing_bucketname, output_key)
-        obj.put(Body=open(f, "rb"))
+    print("Upload files.")
+    cmd = f"aws s3 cp {input_dir}/ s3://{landing_bucketname}/data/raw/ --recursive"
+    push = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    print(push.communicate())
     return
 
 
 def start_workflow(workflow_name):
     """
-    Start Glue workflow to process dvaults.
+    Start Glue workflow to process event files.
 
     :param workflow_name: name of the Glue workflow.
     :return run_id: workflow run id.
@@ -59,7 +57,7 @@ def get_workflow_status(workflow_name, run_id):
         sys.exit(1)
 
 
-def download_output(landing_bucketname, expected_files):
+def download_output(landing_bucketname):
     """
     After the Glue workflow has been completed, download localy the output files.
 
@@ -67,26 +65,11 @@ def download_output(landing_bucketname, expected_files):
     :param expected_files: list of expected final files.
     """
     print("Retrieve output files.")
-    local_fs = fs.LocalFileSystem()
-    s3_fs = fs.S3FileSystem()
-    BATCH_SIZE = 1024 * 1024
-    for expected_f in expected_files:
-        parquet_name = expected_f.split("/")[-1]
-        final_f = f"{landing_bucketname}/data/clean_parquet/{parquet_name}/"
-        all_prefixes = s3_fs.get_file_info(fs.FileSelector(final_f, recursive=True))
-        all_files = [p for p in all_prefixes if p.type.name == "File"]
-        os.makedirs(f"data/output/{parquet_name}")
-        for f in all_files:
-            with s3_fs.open_input_stream(f.path) as in_file:
-                with local_fs.open_output_stream(
-                    f"data/output/{parquet_name}/{f.base_name}"
-                ) as out_file:
-                    while True:
-                        buf = in_file.read(BATCH_SIZE)
-                        if buf:
-                            out_file.write(buf)
-                        else:
-                            break
+    cmd = f"aws s3 cp s3://{landing_bucketname}/data/clean_parquet/ data/output/ --recursive"
+    push = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    print(push.communicate())
     return
 
 
@@ -141,10 +124,10 @@ def main():
     """
     # main properties
     input_dir = "data/input"
-    landing_bucketname = "shape-dvault-ingestion-landing-e2e-test"
-    workflow_name = "shape-dvault-ingestion-batch-e2e-test"
+    landing_bucketname = "ef-ingestion-landing-e2e-test"
+    workflow_name = "ef-ingestion-batch-e2e-test"
     expected_parquet_files = glob.glob("data/expected/*")
-    # load dvault into S3
+    # load event file into S3
     upload_files(input_dir, landing_bucketname)
     # start Glue workflow
     run_id = start_workflow(workflow_name)
@@ -157,7 +140,7 @@ def main():
     print(f"Workflow run has finished with status: {status}")
 
     if status == "COMPLETED":
-        download_output(landing_bucketname, expected_parquet_files)
+        download_output(landing_bucketname)
         test_res = compare_files(expected_parquet_files)
         for fname, tpl in test_res.items():
             if not tpl[0]:

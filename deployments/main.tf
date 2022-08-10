@@ -29,10 +29,6 @@ locals {
       source_bucket = "None"
       media_bucket  = "media-library-staging"
     }
-    prod = {
-      source_bucket = "ai-ef-sync-prod-eu"
-      media_bucket  = "media-library-sync-prod-eu"
-    }
   }
   environmentvars = contains(keys(local.env), terraform.workspace) ? terraform.workspace : "dev"
   workspace       = merge(local.env["dev"], local.env[local.environmentvars])
