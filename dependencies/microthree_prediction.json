@@ -81,7 +81,7 @@
                         "type": "string",
                         "required": true,
                         "allowed": [
-                            "ste"
+                            "microthree"
                         ]
                     },
                     "timestamp": {

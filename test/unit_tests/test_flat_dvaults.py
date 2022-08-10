@@ -2,7 +2,7 @@ import boto3
 import os
 import unittest
 import warnings
-from ef_ingestion_etl.flat_dvaults import (
+from ef_ingestion_etl.flat_jsons import (
     split_files,
     _recast_score_to_float,
     _recast_paragraph_to_str,
@@ -59,7 +59,7 @@ class FlatDvaultTestCase(unittest.TestCase):
     def test_recast_score_to_float(self):
         """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._recast_score_to_float method."""
         predictions = {
-            "summarizer": [
+            "microone": [
                 {
                     "detail": {
                         "prediction": {
@@ -79,11 +79,11 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microthree": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         expected_predictions = {
-            "summarizer": [
+            "microone": [
                 {
                     "detail": {
                         "prediction": {
@@ -106,8 +106,8 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microthree": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         test_predictions = {}
         for service_name, elements in predictions.items():
@@ -119,7 +119,7 @@ class FlatDvaultTestCase(unittest.TestCase):
     def test_recast_paragraph_to_str(self):
         """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._recast_paragraph_to_str method."""
         events = {
-            "summarizer": [
+            "microone": [
                 {
                     "detail": {
                         "evaluation": {"type": "PUBLISH", "payload": {"paragraph": 1}}
@@ -131,11 +131,11 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microthree": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         expected_events = {
-            "summarizer": [
+            "microone": [
                 {
                     "detail": {
                         "evaluation": {"type": "PUBLISH", "payload": {"paragraph": "1"}}
@@ -147,8 +147,8 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "ste": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microthree": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         test_events = {}
         for service_name, elements in events.items():
@@ -160,7 +160,7 @@ class FlatDvaultTestCase(unittest.TestCase):
     def test_convert_query_and_tags(self):
         """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._convert_query_and_tags method."""
         events = {
-            "ste": [
+            "microthree": [
                 {
                     "detail": {
                         "evaluation": {
@@ -179,11 +179,11 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "summarizer": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microone": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         expected_events = {
-            "ste": [
+            "microthree": [
                 {
                     "detail": {
                         "evaluation": {
@@ -205,8 +205,8 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "summarizer": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microone": [{"test": "ignore"}, {"test": "ignore_again"}],
         }
         test_events = {}
         for service_name, elements in events.items():
@@ -218,7 +218,7 @@ class FlatDvaultTestCase(unittest.TestCase):
     def test_replace_image_uri(self):
         """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._replace_image_uri method."""
         events = {
-            "ste": [
+            "microthree": [
                 {
                     "detail": {
                         "evaluation": {
@@ -242,11 +242,11 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "summarizer": [[{"test": "ignore"}, {"test": "ignore_again"}]],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microone": [[{"test": "ignore"}, {"test": "ignore_again"}]],
         }
         expected_events = {
-            "ste": [
+            "microthree": [
                 {
                     "detail": {
                         "evaluation": {
@@ -272,8 +272,8 @@ class FlatDvaultTestCase(unittest.TestCase):
                     }
                 },
             ],
-            "headline": [{"test": "ignore"}, {"test": "ignore_again"}],
-            "summarizer": [[{"test": "ignore"}, {"test": "ignore_again"}]],
+            "microtwo": [{"test": "ignore"}, {"test": "ignore_again"}],
+            "microone": [[{"test": "ignore"}, {"test": "ignore_again"}]],
         }
         test_events = {}
         for service_name, elements in events.items():
@@ -289,15 +289,15 @@ class FlatDvaultTestCase(unittest.TestCase):
         """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._get_service_name method."""
         el = {
             "detail": {
-                "type": "DVaultPredictionEvent",
-                "prediction": {"service": "ste"},
+                "type": "EFPredictionEvent",
+                "prediction": {"service": "microthree"},
             }
         }
-        self.assertEqual(_get_service_name(el), "ste")
+        self.assertEqual(_get_service_name(el), "microthree")
 
         el = {
             "detail": {
-                "type": "DVaultEvaluationEvent",
+                "type": "EFEvaluationEvent",
                 "evaluation": {"service": "headliner"},
             }
         }
@@ -305,7 +305,7 @@ class FlatDvaultTestCase(unittest.TestCase):
 
         el = {
             "detail": {
-                "type": "DVaultEvaluationEvent",
+                "type": "EFEvaluationEvent",
                 "evaluation": {"prediction_id": "blablabla#headliner"},
             }
         }

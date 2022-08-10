@@ -58,7 +58,7 @@
                 "required": true,
                 "anyof_schema": [
                     {
-                        "template_dvault_version": {
+                        "template_ef_version": {
                             "type": "string",
                             "required": true
                         },
@@ -170,7 +170,7 @@
                         }
                     },
                     {
-                        "template_dvault_version": {
+                        "template_ef_version": {
                             "type": "string",
                             "required": true
                         },
