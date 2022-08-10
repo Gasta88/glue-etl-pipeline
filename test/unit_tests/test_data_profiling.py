@@ -4,7 +4,7 @@ from ef_ingestion_etl.data_profiling import run_data_profiling
 import json
 
 
-TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
+TEST_DATA_DIR = "test/unit_tests/data/flat_jsons"
 VALIDATION_SCHEMA_DIR = "dependencies"
 
 
@@ -23,9 +23,9 @@ class DataProfilingTestCase(unittest.TestCase):
         pass
 
     def test_run_data_profiling_event_1_pass(self):
-        """Test shape_dvaults_etl.data_profiling.run_data_profiling method.
+        """Test ef_ingestion_etl.data_profiling.run_data_profiling method.
 
-        Test event dvault with prediction_id attribute and no service attribute.
+        Test event event file with prediction_id attribute and no service attribute.
         """
         event = {
             "version": "0",
@@ -59,16 +59,16 @@ class DataProfilingTestCase(unittest.TestCase):
             },
         }
         schema = {}
-        with open(f"{VALIDATION_SCHEMA_DIR}/summarizer_event.json", "r") as jf:
+        with open(f"{VALIDATION_SCHEMA_DIR}/microone_event.json", "r") as jf:
             schema = json.loads(jf.read())
         flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)
         self.assertDictEqual(errors, {})
 
     def test_run_data_profiling_event_2_pass(self):
-        """Test shape_dvaults_etl.data_profiling.run_data_profiling method.
+        """Test ef_ingestion_etl.data_profiling.run_data_profiling method.
 
-        Test event dvault without prediction_id attribute and with service attribute.
+        Test event event file without prediction_id attribute and with service attribute.
         """
         event = {
             "version": "0",
@@ -104,16 +104,16 @@ class DataProfilingTestCase(unittest.TestCase):
         }
 
         schema = {}
-        with open(f"{VALIDATION_SCHEMA_DIR}/summarizer_event.json", "r") as jf:
+        with open(f"{VALIDATION_SCHEMA_DIR}/microone_event.json", "r") as jf:
             schema = json.loads(jf.read())
         flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)
         self.assertDictEqual(errors, {})
 
     def test_run_data_profiling_event_fail(self):
-        """Test shape_dvaults_etl.data_profiling.run_data_profiling method.
+        """Test ef_ingestion_etl.data_profiling.run_data_profiling method.
 
-        Test event dvault without prediction_id attribute nor service attribute.
+        Test event event file without prediction_id attribute nor service attribute.
         """
         event = {
             "version": "0",
@@ -148,16 +148,16 @@ class DataProfilingTestCase(unittest.TestCase):
         }
 
         schema = {}
-        with open(f"{VALIDATION_SCHEMA_DIR}/summarizer_event.json", "r") as jf:
+        with open(f"{VALIDATION_SCHEMA_DIR}/microone_event.json", "r") as jf:
             schema = json.loads(jf.read())
         flag, errors = run_data_profiling(event, schema)
         self.assertFalse(flag)
         self.assertTrue(len(errors) > 0)
 
     def test_run_data_profiling_prediction_pass(self):
-        """Test shape_dvaults_etl.data_profiling.run_data_profiling method.
+        """Test ef_ingestion_etl.data_profiling.run_data_profiling method.
 
-        Test prediction dvault for success.
+        Test prediction event file for success.
         """
         event = {
             "version": "0",
@@ -196,16 +196,16 @@ class DataProfilingTestCase(unittest.TestCase):
         }
 
         schema = {}
-        with open(f"{VALIDATION_SCHEMA_DIR}/headline_prediction.json", "r") as jf:
+        with open(f"{VALIDATION_SCHEMA_DIR}/microtwo_prediction.json", "r") as jf:
             schema = json.loads(jf.read())
         flag, errors = run_data_profiling(event, schema)
         self.assertTrue(flag)
         self.assertDictEqual(errors, {})
 
     def test_run_data_profiling_prediction_fail(self):
-        """Test shape_dvaults_etl.data_profiling.run_data_profiling method.
+        """Test ef_ingestion_etl.data_profiling.run_data_profiling method.
 
-        Test prediction dvault for failure.
+        Test prediction event file for failure.
         """
         event = {
             "version": "0",
@@ -244,7 +244,7 @@ class DataProfilingTestCase(unittest.TestCase):
         }
 
         schema = {}
-        with open(f"{VALIDATION_SCHEMA_DIR}/headline_prediction.json", "r") as jf:
+        with open(f"{VALIDATION_SCHEMA_DIR}/microtwo_prediction.json", "r") as jf:
             schema = json.loads(jf.read())
         flag, errors = run_data_profiling(event, schema)
         self.assertFalse(flag)

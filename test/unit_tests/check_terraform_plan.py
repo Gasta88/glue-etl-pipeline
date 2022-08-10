@@ -18,7 +18,7 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_s3_bucket"
         }
-        landing_bucket = buckets.get("aws_s3_bucket.dvault-bucket", None)
+        landing_bucket = buckets.get("aws_s3_bucket.ef-bucket", None)
         self.assertIsNotNone(landing_bucket)
         # add more tests if more buckets are created
 
@@ -40,8 +40,8 @@ class CheckTerraformPlan(unittest.TestCase):
             for resource in self.plan["planned_values"]["root_module"]["resources"]
             if resource["type"] == "aws_glue_workflow"
         }
-        dvault_workflow = workflows.get("aws_glue_workflow.dvault-glue-workflow", None)
-        self.assertIsNotNone(dvault_workflow)
+        ef_workflow = workflows.get("aws_glue_workflow.ef-glue-workflow", None)
+        self.assertIsNotNone(ef_workflow)
 
         jobs = {
             resource["address"]: resource
@@ -50,9 +50,9 @@ class CheckTerraformPlan(unittest.TestCase):
         }
         pre_job = jobs.get("aws_glue_job.pre-job", None)
         self.assertIsNotNone(pre_job)
-        profile_job = jobs.get("aws_glue_job.profile-dvault-job", None)
+        profile_job = jobs.get("aws_glue_job.profile-ef-job", None)
         self.assertIsNotNone(profile_job)
-        flat_job = jobs.get("aws_glue_job.flat-dvault-job", None)
+        flat_job = jobs.get("aws_glue_job.flat-ef-job", None)
         self.assertIsNotNone(flat_job)
         convert_job = jobs.get("aws_glue_job.convert-to-parquet-job", None)
         self.assertIsNotNone(convert_job)
@@ -71,20 +71,16 @@ class CheckTerraformPlan(unittest.TestCase):
         pre_trigger = triggers.get("aws_glue_trigger.prejob-trigger", None)
         self.assertIsNotNone(pre_trigger)
         profile_pass_trigger = triggers.get(
-            "aws_glue_trigger.profile-dvault-pass-trigger", None
+            "aws_glue_trigger.profile-ef-pass-trigger", None
         )
         self.assertIsNotNone(profile_pass_trigger)
         profile_fail_trigger = triggers.get(
-            "aws_glue_trigger.profile-dvault-fail-trigger", None
+            "aws_glue_trigger.profile-ef-fail-trigger", None
         )
         self.assertIsNotNone(profile_fail_trigger)
-        flat_pass_trigger = triggers.get(
-            "aws_glue_trigger.flat-dvault-pass-trigger", None
-        )
+        flat_pass_trigger = triggers.get("aws_glue_trigger.flat-ef-pass-trigger", None)
         self.assertIsNotNone(flat_pass_trigger)
-        flat_fail_trigger = triggers.get(
-            "aws_glue_trigger.flat-dvault-fail-trigger", None
-        )
+        flat_fail_trigger = triggers.get("aws_glue_trigger.flat-ef-fail-trigger", None)
         self.assertIsNotNone(flat_fail_trigger)
         convert_pass_trigger = triggers.get(
             "aws_glue_trigger.convert-to-parquet-pass-trigger", None

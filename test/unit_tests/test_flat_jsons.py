@@ -13,8 +13,8 @@ from ef_ingestion_etl.flat_jsons import (
 import os
 import logging
 
-TEST_DATA_DIR = "test/unit_tests/data/flat_dvaults"
-MEDIA_BUCKETNAME = "shape-media-library-staging"
+TEST_DATA_DIR = "test/unit_tests/data/flat_jsons"
+MEDIA_BUCKETNAME = "media-library-staging"
 logging.getLogger("botocore").setLevel(logging.CRITICAL)
 logging.getLogger("boto3").setLevel(logging.CRITICAL)
 logging.getLogger("urllib3").setLevel(logging.CRITICAL)
@@ -40,7 +40,7 @@ class FlatDvaultTestCase(unittest.TestCase):
         pass
 
     def test_split_files(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults.split_files method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons.split_files method."""
         predictions = {}
         events = {}
         for f in self.all_testfiles:
@@ -57,7 +57,7 @@ class FlatDvaultTestCase(unittest.TestCase):
             self.assertTrue(len(events[service_name]) > 0)
 
     def test_recast_score_to_float(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._recast_score_to_float method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons._recast_score_to_float method."""
         predictions = {
             "microone": [
                 {
@@ -117,7 +117,7 @@ class FlatDvaultTestCase(unittest.TestCase):
         self.assertDictEqual(test_predictions, expected_predictions)
 
     def test_recast_paragraph_to_str(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._recast_paragraph_to_str method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons._recast_paragraph_to_str method."""
         events = {
             "microone": [
                 {
@@ -158,7 +158,7 @@ class FlatDvaultTestCase(unittest.TestCase):
         self.assertDictEqual(test_events, expected_events)
 
     def test_convert_query_and_tags(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._convert_query_and_tags method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons._convert_query_and_tags method."""
         events = {
             "microthree": [
                 {
@@ -216,7 +216,7 @@ class FlatDvaultTestCase(unittest.TestCase):
         self.assertDictEqual(test_events, expected_events)
 
     def test_replace_image_uri(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._replace_image_uri method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons._replace_image_uri method."""
         events = {
             "microthree": [
                 {
@@ -236,7 +236,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                             "type": "PUBLISH",
                             "payload": {
                                 "media_id": "1546195",
-                                "medialib": "SHAPELIB",
+                                "medialib": "EXTERNALLIB",
                             },
                         },
                     }
@@ -252,7 +252,7 @@ class FlatDvaultTestCase(unittest.TestCase):
                         "evaluation": {
                             "type": "PUBLISH",
                             "payload": {
-                                "media_id": "s3://shape-media-library-staging/77e34376-ddc0-4710-8088-c426fb669951/MYLIB/67e319a0-33b0-478a-b0fa-35a337ae5fc1",
+                                "media_id": "s3://media-library-staging/77e34376-ddc0-4710-8088-c426fb669951/MYLIB/67e319a0-33b0-478a-b0fa-35a337ae5fc1",
                                 "medialib": "MYLIB",
                                 "search_match": None,
                             },
@@ -264,8 +264,8 @@ class FlatDvaultTestCase(unittest.TestCase):
                         "evaluation": {
                             "type": "PUBLISH",
                             "payload": {
-                                "media_id": "s3://shape-media-library-staging/77e34376-ddc0-4710-8088-c426fb669951/SHAPELIB/1546195",
-                                "medialib": "SHAPELIB",
+                                "media_id": "s3://media-library-staging/77e34376-ddc0-4710-8088-c426fb669951/EXTERNALLIB/1546195",
+                                "medialib": "EXTERNALLIB",
                                 "search_match": None,
                             },
                         },
@@ -286,7 +286,7 @@ class FlatDvaultTestCase(unittest.TestCase):
         self.assertDictEqual(test_events, expected_events)
 
     def test_get_service_name(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults._get_service_name method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons._get_service_name method."""
         el = {
             "detail": {
                 "type": "EFPredictionEvent",
@@ -298,21 +298,21 @@ class FlatDvaultTestCase(unittest.TestCase):
         el = {
             "detail": {
                 "type": "EFEvaluationEvent",
-                "evaluation": {"service": "headliner"},
+                "evaluation": {"service": "microtwo"},
             }
         }
-        self.assertEqual(_get_service_name(el), "headliner")
+        self.assertEqual(_get_service_name(el), "microtwo")
 
         el = {
             "detail": {
                 "type": "EFEvaluationEvent",
-                "evaluation": {"prediction_id": "blablabla#headliner"},
+                "evaluation": {"prediction_id": "blablabla#microtwo"},
             }
         }
-        self.assertEqual(_get_service_name(el), "headliner")
+        self.assertEqual(_get_service_name(el), "microtwo")
 
     def test_save_flat_json(self):
-        """Test shape_dvaults_etl.glue_workflow_jobs.flat_dvaults.save_flat_json method."""
+        """Test ef_ingestion_etl.glue_workflow_jobs.flat_jsons.save_flat_json method."""
         pass
 
 

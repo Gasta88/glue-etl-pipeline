@@ -12,7 +12,7 @@ import logging
 
 
 TEST_DATA_DIR = "test/unit_tests/data/convert_to_parquet"
-MEDIA_BUCKETNAME = "shape-media-library-staging"
+MEDIA_BUCKETNAME = "media-library-staging"
 logging.getLogger("py4j").setLevel(logging.ERROR)
 
 
@@ -35,15 +35,15 @@ class ConvertToParquetTestCase(unittest.TestCase):
             if os.path.isfile(f)
         ]
         self.table_names = [
-            "HEADLINE_PRED",
-            "HEADLINE_EVENT",
-            "STE_PRED",
-            "STE_EVENT",
-            "SUMMARIZER_PRED",
-            "SUMMARIZER_EVENT",
+            "MICROTWO_PRED",
+            "MICROTWO_EVENT",
+            "MICROTHREE_PRED",
+            "MICROTHREE_EVENT",
+            "MICROONE_PRED",
+            "MICROONE_EVENT",
         ]
         self.sql_dict = {
-            "HEADLINE_PRED": """
+            "MICROTWO_PRED": """
                             select
                             account,
                             detail.id as id,
@@ -55,9 +55,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.input.transcript as transcript,
                             detail.prediction.output.headline as headline,
                             time as date_time
-                            from headline_pred
+                            from microtwo_pred
                         """,
-            "HEADLINE_EVENT": """
+            "MICROTWO_EVENT": """
                             select
                             account,
                             detail.id as id,
@@ -69,9 +69,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.shape_id as shape_id,
                             detail.evaluation.payload.text as payload_text,
                             time as date_time
-                            from headline_event
+                            from microtwo_event
                         """,
-            "STE_PRED": """
+            "MICROTHREE_PRED": """
                             select
                             account,
                             detail.id as id,
@@ -86,9 +86,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.output.search_terms as search_terms,
                             detail.prediction.output.sentence as sentence,
                             time as date_time
-                            from ste_pred
+                            from microthree_pred
                         """,
-            "STE_EVENT": """
+            "MICROTHREE_EVENT": """
                             select
                             account,
                             detail.id as id,
@@ -108,9 +108,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.payload.tags as payload_tags,
                             detail.evaluation.payload.caption as payload_caption,
                             time as date_time
-                            from ste_event
+                            from microthree_event
                         """,
-            "SUMMARIZER_PRED": """
+            "MICROONE_PRED": """
                             select
                             account,
                             detail.id as id,
@@ -125,9 +125,9 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.output.metadata as output_metadata,
                             detail.prediction.output.skipped_paragraphs as output_skipped_paragraphs,
                             time as date_time
-                            from summarizer_pred
+                            from microone_pred
                         """,
-            "SUMMARIZER_EVENT": """
+            "MICROONE_EVENT": """
                             select
                             account,
                             detail.id as id,
@@ -141,46 +141,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.evaluation.payload.slide as slide,
                             detail.evaluation.payload.text as text,
                             time as date_time
-                            from summarizer_event
-                        """,
-            "SIM_EVENT": """
-                        select
-                        account,
-                        detail.id as id,
-                        detail.partitionkey as partition_key,
-                        detail.evaluation.prediction_id as prediction_id,
-                        detail.evaluation.timestamp as unix_timestamp,
-                        detail.evaluation.shape_id as shape_id,
-                        detail.evaluation.type as event_type,
-                        detail.evaluation.reporter as reporter,
-                        detail.evaluation.payload.text as payload_text, 
-                        detail.evaluation.payload.query as payload_query,
-                        detail.evaluation.payload.media_id as payload_media_id,
-                        detail.evaluation.payload.media_type as payload_media_type,
-                        detail.evaluation.payload.medialib as payload_medialib,
-                        detail.evaluation.payload.image_tags as payload_tags,
-                        detail.evaluation.payload.caption as payload_caption,
-                        time as date_time
-                        from sim_event
-                        """,
-            "IT_EVENT": """
-                        select
-                        account,
-                        detail.id as id,
-                        detail.partitionkey as partition_key,
-                        detail.evaluation.prediction_id as prediction_id,
-                        detail.evaluation.timestamp as unix_timestamp,
-                        detail.evaluation.shape_id as shape_id,
-                        detail.evaluation.type as event_type,
-                        detail.evaluation.reporter as reporter,
-                        detail.evaluation.payload.media_id as payload_media_id,
-                        detail.evaluation.payload.media_type as payload_media_type,
-                        detail.evaluation.payload.medialib as payload_medialib,
-                        detail.evaluation.payload.image_tags as payload_tags,
-                        detail.evaluation.payload.caption as payload_caption,
-                        detail.evaluation.payload.source_file as payload_source_file,
-                        time as date_time
-                        from it_event
+                            from microone_event
                         """,
         }
 
@@ -197,98 +158,84 @@ class ConvertToParquetTestCase(unittest.TestCase):
                 self.spark, table_name, TEST_DATA_DIR, self.ALL_JSONS
             )
 
-        self.assertTrue(len(dfs["HEADLINE_PRED"].columns) > 0)
-        self.assertTrue(len(dfs["HEADLINE_EVENT"].columns) > 0)
-        self.assertTrue(len(dfs["STE_PRED"].columns) > 0)
-        self.assertTrue(len(dfs["STE_EVENT"].columns) > 0)
-        self.assertTrue(len(dfs["SUMMARIZER_PRED"].columns) > 0)
-        self.assertTrue(len(dfs["SUMMARIZER_EVENT"].columns) > 0)
+        self.assertTrue(len(dfs["MICROTWO_PRED"].columns) > 0)
+        self.assertTrue(len(dfs["MICROTWO_EVENT"].columns) > 0)
+        self.assertTrue(len(dfs["MICROTHREE_PRED"].columns) > 0)
+        self.assertTrue(len(dfs["MICROTHREE_EVENT"].columns) > 0)
+        self.assertTrue(len(dfs["MICROONE_PRED"].columns) > 0)
+        self.assertTrue(len(dfs["MICROONE_EVENT"].columns) > 0)
 
-        self.assertTrue(dfs["HEADLINE_PRED"].count() > 0)
-        self.assertTrue(dfs["HEADLINE_EVENT"].count() > 0)
-        self.assertTrue(dfs["STE_PRED"].count() > 0)
-        self.assertTrue(dfs["STE_EVENT"].count() > 0)
-        self.assertTrue(dfs["SUMMARIZER_PRED"].count() > 0)
-        self.assertTrue(dfs["SUMMARIZER_EVENT"].count() > 0)
+        self.assertTrue(dfs["MICROTWO_PRED"].count() > 0)
+        self.assertTrue(dfs["MICROTWO_EVENT"].count() > 0)
+        self.assertTrue(dfs["MICROTHREE_PRED"].count() > 0)
+        self.assertTrue(dfs["MICROTHREE_EVENT"].count() > 0)
+        self.assertTrue(dfs["MICROONE_PRED"].count() > 0)
+        self.assertTrue(dfs["MICROONE_EVENT"].count() > 0)
 
     def test_get_refined_dataframe(self):
         """Test shape_dvaults_etl.convert_to_parquet.get_refined_dataframe method."""
-        # headline event
+        # microtwo event
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-04-27-15-07-12-731903ee-9d63-47fe-b7ae-b5e4aa2f8a80_CLEAN_HEADLINE.jsonl"
+            "test/unit_tests/data/convert_to_parquet/events/ef-prod-stream-1-2022-04-27-15-07-12-731903ee-9d63-47fe-b7ae-b5e4aa2f8a80_CLEAN_MICROTWO.jsonl"
         )
         refined_df = get_refined_dataframe(
-            self.spark, df, self.sql_dict, "HEADLINE_EVENT"
+            self.spark, df, self.sql_dict, "MICROTWO_EVENT"
         )
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
 
-        # headline pred
+        # microtwo pred
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/predictions/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_HEADLINE.jsonl"
+            "test/unit_tests/data/convert_to_parquet/predictions/ef-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_MICROTWO.jsonl"
         )
         refined_df = get_refined_dataframe(
-            self.spark, df, self.sql_dict, "HEADLINE_PRED"
+            self.spark, df, self.sql_dict, "MICROTWO_PRED"
         )
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
 
-        # STE event
+        # MICROTHREE event
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_STE.jsonl"
-        )
-        refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "STE_EVENT")
-
-        self.assertTrue(len(refined_df.columns) > 0)
-        self.assertTrue(refined_df.count() > 0)
-
-        # STE pred
-        df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/predictions/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_STE.jsonl"
-        )
-        refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "STE_PRED")
-
-        self.assertTrue(len(refined_df.columns) > 0)
-        self.assertTrue(refined_df.count() > 0)
-
-        # SUMMARIZER event
-        df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-04-19-18-20-03-193a495d-f9a1-4289-ad92-ec3235140511_CLEAN_SUMMARIZER.jsonl"
+            "test/unit_tests/data/convert_to_parquet/events/ef-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_MICROTHREE.jsonl"
         )
         refined_df = get_refined_dataframe(
-            self.spark, df, self.sql_dict, "SUMMARIZER_EVENT"
+            self.spark, df, self.sql_dict, "MICROTHREE_EVENT"
         )
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
 
-        # SUMMARIZER pred
+        # MICROTHREE pred
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/predictions/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_SUMMARIZER.jsonl"
+            "test/unit_tests/data/convert_to_parquet/predictions/ef-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_MICROTHREE.jsonl"
         )
         refined_df = get_refined_dataframe(
-            self.spark, df, self.sql_dict, "SUMMARIZER_PRED"
+            self.spark, df, self.sql_dict, "MICROTHREE_PRED"
         )
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
 
-        # IT event
+        # MICROONE event
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_IT.jsonl"
+            "test/unit_tests/data/convert_to_parquet/events/ef-prod-stream-1-2022-04-19-18-20-03-193a495d-f9a1-4289-ad92-ec3235140511_CLEAN_MICROONE.jsonl"
         )
-        refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "IT_EVENT")
+        refined_df = get_refined_dataframe(
+            self.spark, df, self.sql_dict, "MICROONE_EVENT"
+        )
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
 
-        # SIM event
+        # MICROONE pred
         df = self.spark.read.json(
-            "test/unit_tests/data/convert_to_parquet/events/dvault-prod-stream-1-2022-04-19-18-20-03-193a495d-f9a1-4289-ad92-ec3235140511_CLEAN_SIM.jsonl"
+            "test/unit_tests/data/convert_to_parquet/predictions/ef-prod-stream-1-2022-03-04-18-40-16-65ec32bc-83a5-4fcc-a113-b731b40aee97_CLEAN_MICROONE.jsonl"
         )
-        refined_df = get_refined_dataframe(self.spark, df, self.sql_dict, "SIM_EVENT")
+        refined_df = get_refined_dataframe(
+            self.spark, df, self.sql_dict, "MICROONE_PRED"
+        )
 
         self.assertTrue(len(refined_df.columns) > 0)
         self.assertTrue(refined_df.count() > 0)
