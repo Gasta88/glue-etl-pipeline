@@ -11,10 +11,8 @@ terraform {
       version = "~> 3.0"
     }
   }
-  backend "s3" {
-    bucket = "terraform-states"
-    key    = "terraform-state-files/event-files-ingestion-staging.tfstate"
-    region = "us-east-1"
+  backend "local" {
+    path = "terraform.tfstate"
   }
 }
 
@@ -203,10 +201,11 @@ resource "aws_glue_workflow" "ef-glue-workflow" {
 }
 
 resource "aws_glue_trigger" "prejob-trigger" {
-  name     = "ef-ingestion-pre-job-${terraform.workspace}"
-  schedule = "cron(0 * ? * MON-FRI *)"
-  type     = "SCHEDULED"
-  # enabled       = false
+  name = "ef-ingestion-pre-job-${terraform.workspace}"
+  # schedule = "cron(0 * ? * MON-FRI *)"
+  # type     = "SCHEDULED"
+  enabled       = false
+  type          = "ON_DEMAND"
   workflow_name = aws_glue_workflow.ef-glue-workflow.name
   actions {
     job_name = aws_glue_job.pre-job.name
@@ -337,7 +336,7 @@ resource "aws_glue_job" "flat-ef-job" {
   command {
     name            = "pythonshell"
     python_version  = 3
-    script_location = "s3://${aws_s3_bucket.ef-bucket.bucket}/scripts/flat_efs.py"
+    script_location = "s3://${aws_s3_bucket.ef-bucket.bucket}/scripts/flat_jsons.py"
   }
 
   default_arguments = {

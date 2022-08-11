@@ -41,7 +41,7 @@ def start_workflow(workflow_name):
 
 def get_workflow_status(workflow_name, run_id):
     """
-    Rturn status of the workflow run.
+    Return status of the workflow run.
 
     :param workflow_name: name of the Glue workflow.
     :param run_id: id of the Glue workflow run.
@@ -93,7 +93,7 @@ def compare_files(expected_parquet_files):
             "year", "month", "day", "hour"
         )
         try:
-            final_df = spark.read.parquet(final_pq)
+            final_df = spark.read.parquet(final_pq).drop("year", "month", "day", "hour")
         except Exception as e:
             test_flag = False
             msg = e

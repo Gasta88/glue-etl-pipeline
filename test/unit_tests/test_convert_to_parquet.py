@@ -53,7 +53,7 @@ class ConvertToParquetTestCase(unittest.TestCase):
                             detail.prediction.timestamp as unix_timestamp,
                             detail.prediction.shape_id as shape_id,
                             detail.prediction.input.transcript as transcript,
-                            detail.prediction.output.headline as headline,
+                            detail.prediction.output.microtwo as headline,
                             time as date_time
                             from microtwo_pred
                         """,

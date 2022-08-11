@@ -3,6 +3,7 @@ import logging
 import sys
 from elasticsearch import Elasticsearch
 from datetime import datetime
+import json
 
 # Setup logging
 logger = logging.getLogger(__name__)
@@ -25,8 +26,16 @@ def get_run_properties():
         sys.argv,
         ["WORKFLOW_NAME", "WORKFLOW_RUN_ID"],
     )
-    config["workflow_name"] = args["WORKFLOW_NAME"]
-    config["workflow_run_id"] = args["WORKFLOW_RUN_ID"]
+    workflow_name = args["WORKFLOW_NAME"]
+    workflow_run_id = args["WORKFLOW_RUN_ID"]
+
+    glue = boto3.client("glue")
+    run_properties = glue.get_workflow_run_properties(
+        Name=workflow_name, RunId=workflow_run_id
+    )["RunProperties"]
+    config["LANDING_BUCKETNAME"] = run_properties["landing_bucketname"]
+    config["workflow_name"] = workflow_name
+    config["workflow_run_id"] = workflow_run_id
     env = args["WORKFLOW_NAME"].split("-")[-1]
     config["ENVIRONMENT"] = f"e2e-{env}" if env == "test" else env
     return config
@@ -161,7 +170,7 @@ def format_log_entries(workflow_logs):
 def send_log_to_es(
     nice_logs,
     index_name,
-    es_url="https://search-ai-elasticsearch-6-public-whkzoh3jmwiwidqwvzag2jxse4.us-east-1.es.amazonaws.com",
+    es_url="MY_AWESOME_ELASTICSEARCH_CLUSTER_URL",
 ):
     """
     Send formatted logs to ElasticSearch cluster.
@@ -181,14 +190,28 @@ def send_log_to_es(
     return
 
 
+def write_logs(nice_logs, landing_bucketname):
+    """
+    Write logs on landing S3 bucket when running e2e tests.
+
+    :param nice_logs: formatted logs to create the index.
+    :param landing_bucketname: S3 bucket where files will be hosted.
+    """
+    s3 = boto3.resource("s3")
+    output_key = "es_logs/ef_logs.jsonl"
+    with open("/tmp/ef_logs.jsonl", "w") as outfile:
+        json.dump(nice_logs, outfile, default=str)
+        outfile.write("\n")
+    obj = s3.Object(landing_bucketname, output_key)
+    obj.put(Body=open("/tmp/ef_logs.jsonl", "rb"))
+    return
+
+
 def main():
     """
     Run main steps in the process_logs Glue Job.
     """
     run_props = get_run_properties()
-    # Skip job run if running end-to-end test and dev pipeline
-    if run_props["ENVIRONMENT"] in ["e2e-test", "dev"]:
-        return
     workflow_name = run_props["workflow_name"]
     workflow_run_id = run_props["workflow_run_id"]
     index_name = f'efs_ingestion_logs_{run_props["ENVIRONMENT"]}'
@@ -200,8 +223,13 @@ def main():
     workflow_logs = get_log_entries(workflow_run)
     logger.info("Format logs.")
     formatted_log_entries = format_log_entries(workflow_logs)
-    logger.info("Write logs into ES.")
-    send_log_to_es(formatted_log_entries, index_name)
+    # Save logs on landing bucket if end-to-end test and dev pipeline
+    if run_props["ENVIRONMENT"] in ["e2e-test", "dev"]:
+        logger.info(f'Write logs into {run_props["LANDING_BUCKETNAME"]}')
+        write_logs(formatted_log_entries, run_props["LANDING_BUCKETNAME"])
+    else:
+        logger.info("Write logs into ES.")
+        send_log_to_es(formatted_log_entries, index_name)
     return
 
 
