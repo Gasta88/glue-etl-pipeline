@@ -60,10 +60,6 @@ In order to keep an eye into the data movement inside the ETL pipeline, the fina
 
 A Kibana board is provided to inspect common metrics while data is profiled inside the pipeline. The index name inside ElasticSeach is _event_file_logs\_{env}_, where _{env}_ represent the different version of the pipeline (ex: dev, prod, e2e-test).
 
-## Future improvements
-
-**TBD**
-
 ## Testing the pipeline
 
 At the current state, the project is tested via CI/CD pipeline in Gitlab. Tests are allocated in _test/_ folder.

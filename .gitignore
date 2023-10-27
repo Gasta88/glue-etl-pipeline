@@ -3,6 +3,7 @@
 .terraform.lock.hcl
 deployments/*.json
 deployments/*.out
+deployments/*.tfstate.d
 
 # Intent Classifier models
 resources/
